@@ -94,7 +94,7 @@ export default function CategorySlider({
 
   return (
     <section
-      className={cn("w-full bg-background py-6", className)}
+      className={cn("w-full bg-background py-4", className)}
       aria-label="Shop by category"
     >
       <div className="mx-auto w-full max-w-7xl px-4">
