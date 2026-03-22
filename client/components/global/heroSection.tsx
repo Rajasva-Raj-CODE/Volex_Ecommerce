@@ -11,7 +11,7 @@ import Image from 'next/image'
 
 const heroSection = () => {
   return (
-    <Carousel className="w-full sm:max-w-7xl">
+    <Carousel className="w-full sm:max-w-7xl py-10">
       <CarouselContent>
         {heroSectionImages.map((image: StaticImageData, index: number) => (
           <CarouselItem key={index} className="w-full h-full">
