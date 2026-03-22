@@ -1,9 +1,9 @@
-import Image from "next/image";
+import Navbar from "@/components/global/navbar/navbarSection";
 
 export default function Home() {
   return (
-    <div classname="font-bold ">
-      new
+    <div>
+      <Navbar />
     </div>
   );
 }
