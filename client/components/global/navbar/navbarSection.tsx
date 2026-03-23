@@ -103,12 +103,12 @@ export default function Navbar() {
 
                         {/* Location - Hidden on small screens (Desktop Only) */}
                         <div className="hidden lg:flex shrink-0 items-center gap-2 group cursor-pointer pl-4 border-l border-gray-100">
-                            <div className="bg-red-50 p-2 rounded-full group-hover:bg-red-100 transition-colors">
-                                <HugeiconsIcon icon={Location01Icon} size={18} className="text-red-600" />
+                            <div className="bg-primary/10 p-2 rounded-full group-hover:bg-primary/20 transition-colors">
+                                <HugeiconsIcon icon={Location01Icon} size={18} className="text-primary" />
                             </div>
                             <div className="text-left">
                                 <p className="text-xs text-gray-500 font-medium">Deliver to</p>
-                                <p className="text-sm font-bold text-gray-900 group-hover:text-red-600 transition-colors">Ghaziabad 201016</p>
+                                <p className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">Ghaziabad 201016</p>
                             </div>
                         </div>
 
@@ -128,7 +128,7 @@ export default function Navbar() {
                                     setIsSearchFocused(true);
                                 }}
                                 placeholder="Search for phone, TV, home appliances..."
-                                className="h-12 w-full rounded-full border border-gray-200 pl-12 pr-12 text-[14px] shadow-sm bg-[#ebebeb]/70 focus-visible:ring-0 cursor-text"
+                                className="h-12 w-full rounded-full border border-gray-200 pl-12 pr-12 text-[14px] shadow-sm bg-muted/70 focus-visible:ring-0 cursor-text"
                             />
                             <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent text-gray-400 hover:text-black z-30 opacity-0 pointer-events-none"></button>
                         </div>
@@ -164,7 +164,7 @@ export default function Navbar() {
                                     {/* Modal Content */}
                                     <div className="p-8 text-left max-h-[70vh] overflow-y-auto">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="w-5 h-5 flex items-center justify-center bg-red-100 rounded-full text-red-600 text-[10px]">🔥</div>
+                                            <div className="w-5 h-5 flex items-center justify-center bg-primary/20 rounded-full text-primary text-[10px]">🔥</div>
                                             <span className="font-bold text-gray-900 text-[15px]">Trending Searches</span>
                                         </div>
                                         <div className="flex flex-wrap gap-2.5 mb-6">
@@ -179,7 +179,7 @@ export default function Navbar() {
                                         </div>
 
                                         {/* Ad Banner inside Search */}
-                                        <div className="w-full h-[180px] bg-[#f9f9f9] rounded-xl flex items-center px-8 relative overflow-hidden border border-gray-100">
+                                        <div className="w-full h-[180px] bg-muted rounded-xl flex items-center px-8 relative overflow-hidden border border-gray-100">
                                             <div className="z-10 relative">
                                                 <div className="flex items-center gap-1 text-black font-bold text-sm mb-1">
                                                     <span>🍎</span> MacBook Neo
@@ -219,24 +219,24 @@ export default function Navbar() {
                         {/* Utility icons */}
                         <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
                             {/* Desktop only favorites / stores */}
-                            <Button variant="ghost" size="sm" className="hidden lg:flex gap-2 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-full px-4">
+                            <Button variant="ghost" size="sm" className="hidden lg:flex gap-2 text-sm text-gray-700 hover:text-primary hover:bg-primary/10 rounded-full px-4">
                                 <HugeiconsIcon icon={Store01Icon} size={20} />
                                 <span className="font-semibold">Stores</span>
                             </Button>
 
-                            <Button variant="ghost" size="icon" className="hidden lg:flex text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-full">
+                            <Button variant="ghost" size="icon" className="hidden lg:flex text-gray-700 hover:text-primary hover:bg-primary/10 rounded-full">
                                 <HugeiconsIcon icon={FavouriteIcon} size={22} />
                             </Button>
 
                             {/* User - Always visible on mobile too */}
-                            <Button variant="ghost" size="icon" className="relative text-black hover:bg-transparent lg:hover:text-red-600 lg:hover:bg-red-50 rounded-full">
+                            <Button variant="ghost" size="icon" className="relative text-black hover:bg-transparent lg:hover:text-primary lg:hover:bg-primary/10 rounded-full">
                                 <HugeiconsIcon icon={UserIcon} size={26} />
                                 {/* Red dot badge for User as in screenshot */}
-                                <span className="absolute right-1 top-1 flex h-2.5 w-2.5 rounded-full bg-red-600 border border-white"></span>
+                                <span className="absolute right-1 top-1 flex h-2.5 w-2.5 rounded-full bg-primary border border-white"></span>
                             </Button>
 
                             {/* Cart - Always visible */}
-                            <Button variant="ghost" size="icon" className="relative text-black hover:bg-transparent lg:hover:text-red-600 lg:hover:bg-red-50 rounded-full ml-1">
+                            <Button variant="ghost" size="icon" className="relative text-black hover:bg-transparent lg:hover:text-primary lg:hover:bg-primary/10 rounded-full ml-1">
                                 <HugeiconsIcon icon={ShoppingCart01Icon} size={26} />
                             </Button>
                         </div>
@@ -260,7 +260,7 @@ export default function Navbar() {
                                     setIsSearchFocused(true);
                                 }}
                                 placeholder="Search for phone, TV, home appliances..."
-                                className="h-[46px] w-full rounded-full border border-gray-200 bg-[#ebebeb]/70 pl-11 pr-11 text-[15px] placeholder:text-gray-500 focus-visible:ring-0 shadow-none cursor-text"
+                                className="h-[46px] w-full rounded-full border border-gray-200 bg-muted/70 pl-11 pr-11 text-[15px] placeholder:text-gray-500 focus-visible:ring-0 shadow-none cursor-text"
                             />
                             <HugeiconsIcon
                                 icon={Mic01Icon}
@@ -292,14 +292,15 @@ export default function Navbar() {
 
                                 return (
                                     <li key={cat.label} onMouseEnter={() => handleEnter(cat.label)} className="flex-1 text-center">
-                                        <button
+                                        <Link
+                                            href={`/category/${cat.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                                             className={`flex w-full items-center justify-center gap-1.5 whitespace-nowrap px-2 pb-3.5 pt-4 text-[13px] font-medium transition-colors ${isActive
                                                 ? "text-black border-b-[3px] border-black"
                                                 : "text-gray-500 border-b-[3px] border-transparent hover:text-black hover:border-gray-200"
                                                 }`}
                                         >
                                             {cat.label}
-                                        </button>
+                                        </Link>
                                     </li>
                                 );
                             })}

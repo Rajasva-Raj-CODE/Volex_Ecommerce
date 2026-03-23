@@ -152,7 +152,7 @@ type ProductShowcaseSectionProps = {
 export default function ProductShowcaseSection({
   title = "Best Of Apple",
   description =
-    "Save up to ₹5,000 instantly on eligible products using ICICI & AXIS Bank Credit Cards. Exchange bonus up to ₹6,000 on iPhone. T&C apply.",
+  "Save up to ₹5,000 instantly on eligible products using ICICI & AXIS Bank Credit Cards. Exchange bonus up to ₹6,000 on iPhone. T&C apply.",
   emiLabel = "No Cost EMI Available",
   viewAllLabel = "View All",
   viewAllHref,

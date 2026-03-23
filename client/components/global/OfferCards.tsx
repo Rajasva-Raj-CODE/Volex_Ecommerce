@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils"
 
 export type OfferCardItem = {
   id: string
-  brand: string
-  /** Optional logo; when omitted, brand text is shown in the logo panel */
+  primary: string
+  /** Optional logo; when omitted, primary text is shown in the logo panel */
   logo?: StaticImageData | string
   offer: string
 }
@@ -13,28 +13,28 @@ export type OfferCardItem = {
 const defaultOffers: OfferCardItem[] = [
   {
     id: "1",
-    brand: "YES BANK",
+    primary: "YES BANK",
     offer: "Get 10% Instant Discount upto Rs.3,000 on YES Bank Credit Card EMI",
   },
   {
     id: "2",
-    brand: "BOBCARD",
+    primary: "BOBCARD",
     offer: "Get 10% Instant Discount upto Rs.3,000 on BOB Card EMI",
   },
   {
     id: "3",
-    brand: "DBS",
+    primary: "DBS",
     offer: "Get 10% Instant Discount upto Rs.3,000 on DBS Bank Credit Card EMI",
   },
   {
     id: "4",
-    brand: "HDFC",
+    primary: "HDFC",
     offer: "Extra 5% cashback on select HDFC Debit & Credit Cards",
   },
 ]
 
 function OfferCard({
-  brand,
+  primary,
   logo,
   offer,
   className,
@@ -50,14 +50,14 @@ function OfferCard({
         {logo ? (
           <Image
             src={logo}
-            alt={brand}
+            alt={primary}
             width={88}
             height={40}
             className="max-h-10 w-auto object-contain"
           />
         ) : (
           <span className="text-center text-[0.65rem] font-bold uppercase leading-tight tracking-tight text-foreground">
-            {brand}
+            {primary}
           </span>
         )}
       </div>
@@ -98,7 +98,7 @@ const OfferCards = ({ offers = defaultOffers, className }: OfferCardsProps) => {
               {offers.map((item) => (
                 <OfferCard
                   key={`${set}-${item.id}`}
-                  brand={item.brand}
+                  primary={item.primary}
                   logo={item.logo}
                   offer={item.offer}
                 />

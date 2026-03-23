@@ -1,4 +1,5 @@
 import { NavCategory } from "./nav-data";
+import Link from "next/link";
 
 export function MegaDropdown({ category }: { category: NavCategory }) {
     if (!category.subcategories || !category.banners) return null;
@@ -15,18 +16,19 @@ export function MegaDropdown({ category }: { category: NavCategory }) {
                 <div className="w-[300px] shrink-0 border-r border-gray-200 py-6 pr-6 bg-white overflow-y-auto max-h-[500px]">
                     <div className="flex flex-col gap-0.5 ml-4">
                         {category.subcategories.map((sub) => (
-                            <button
+                            <Link
                                 key={sub.label}
-                                className="text-left w-full px-4 py-2.5 text-[14px] text-gray-700 hover:text-black hover:font-semibold transition-all"
+                                href={`/category/${category.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}/${sub.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                className="block w-full px-4 py-2.5 text-[14px] text-gray-700 hover:text-black hover:font-semibold transition-all"
                             >
                                 {sub.label}
-                            </button>
+                            </Link>
                         ))}
                     </div>
                 </div>
 
                 {/* Right side: Image Banners */}
-                <div className="flex-1 p-8 bg-[#f9f9f9]">
+                <div className="flex-1 p-8 bg-muted">
                     {isWideStack ? (
                         /* Stacked Wide Banners (e.g. Laptops & Accessories) */
                         <div className="flex flex-col gap-6 max-w-4xl max-h-[450px]">
