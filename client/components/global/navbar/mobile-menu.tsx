@@ -102,12 +102,12 @@ export function MobileMenu() {
                         {/* Actions Split */}
                         <div className="flex items-center border-b border-gray-200">
                             <button className="flex-1 flex items-center justify-center gap-2 py-3.5 hover:bg-gray-50 transition-colors">
-                                <HugeiconsIcon icon={Store01Icon} size={18} className="text-red-600" />
+                                <HugeiconsIcon icon={Store01Icon} size={18} className="text-primary" />
                                 <span className="text-[13px] font-semibold text-gray-900">Store Locator</span>
                             </button>
                             <div className="w-[1px] h-8 bg-gray-200" />
                             <button className="flex-1 flex items-center justify-center gap-2 py-3.5 hover:bg-gray-50 transition-colors">
-                                <HugeiconsIcon icon={HeadphonesIcon} size={18} className="text-red-600" />
+                                <HugeiconsIcon icon={HeadphonesIcon} size={18} className="text-primary" />
                                 <span className="text-[13px] font-semibold text-gray-900">Help Center</span>
                             </button>
                         </div>
@@ -115,18 +115,33 @@ export function MobileMenu() {
                         {/* Categories List */}
                         <div className="py-2 border-b border-gray-200">
                             {NAV_CATEGORIES.map((cat, index) => (
-                                <button
-                                    key={cat.label}
-                                    onClick={() => cat.subcategories ? setActiveCategory(cat) : setOpen(false)}
-                                    className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        {/* Fallback Icon for main category if not defined */}
-                                        <HugeiconsIcon icon={Search01Icon} size={22} className="text-black" />
-                                        <span className="text-[14px] font-semibold text-gray-900">{cat.label}</span>
-                                    </div>
-                                    <HugeiconsIcon icon={ArrowRight01Icon} size={18} className="text-gray-900" />
-                                </button>
+                                cat.subcategories ? (
+                                    <button
+                                        key={cat.label}
+                                        onClick={() => setActiveCategory(cat)}
+                                        className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            {/* Fallback Icon for main category if not defined */}
+                                            <HugeiconsIcon icon={Search01Icon} size={22} className="text-black" />
+                                            <span className="text-[14px] font-semibold text-gray-900">{cat.label}</span>
+                                        </div>
+                                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} className="text-gray-900" />
+                                    </button>
+                                ) : (
+                                    <Link
+                                        key={cat.label}
+                                        href={`/category/${cat.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                        onClick={() => setOpen(false)}
+                                        className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <HugeiconsIcon icon={Search01Icon} size={22} className="text-black" />
+                                            <span className="text-[14px] font-semibold text-gray-900">{cat.label}</span>
+                                        </div>
+                                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} className="text-gray-900" />
+                                    </Link>
+                                )
                             ))}
                         </div>
 
@@ -157,17 +172,18 @@ export function MobileMenu() {
                     //* ── SUBCATEGORY MENU STATE ── *//
                     <ScrollArea className="flex-1 flex flex-col">
                         <div className="p-4 pt-2">
-                            <h2 className="text-xl font-bold text-[#0d1b2a] mb-2">{activeCategory.label}</h2>
+                            <h2 className="text-xl font-bold text-foreground mb-2">{activeCategory.label}</h2>
                             <div className="flex flex-col mt-2">
                                 {activeCategory.subcategories?.map((sub) => (
-                                    <button
+                                    <Link
                                         key={sub.label}
+                                        href={`/category/${activeCategory.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}/${sub.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                                         onClick={() => setOpen(false)}
                                         className="flex items-center justify-between py-3.5 border-b border-gray-50 group hover:bg-gray-50"
                                     >
-                                        <span className="text-[14px] font-medium text-[#1a202c] pl-1 group-hover:text-red-500 transition-colors">{sub.label}</span>
+                                        <span className="text-[14px] font-medium text-[#1a202c] pl-1 group-hover:text-primary/90 transition-colors">{sub.label}</span>
                                         <HugeiconsIcon icon={ArrowRight01Icon} size={16} className="text-gray-600 mr-2" />
-                                    </button>
+                                    </Link>
                                 ))}
                             </div>
                         </div>
