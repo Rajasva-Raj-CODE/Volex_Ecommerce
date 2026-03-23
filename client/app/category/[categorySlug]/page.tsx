@@ -1,4 +1,7 @@
 import React from 'react';
+import ProductListingTemplate from "@/components/global/ProductListingTemplate";
+import Navbar from "@/components/global/navbar/navbarSection";
+import FooterSection from "@/components/global/FooterSection";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -20,11 +23,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const title = formatSlug(resolvedParams.categorySlug);
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-24 min-h-[60vh]">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">{title}</h1>
-      <p className="text-gray-600 dark:text-gray-400">
-        Products for {title} will be displayed here. (Design will be done later)
-      </p>
+    <div className="flex w-full max-w-full flex-1 flex-col items-center">
+      <Navbar />
+      <div className="w-full">
+        <ProductListingTemplate categoryTitle={title} />
+      </div>
+      <FooterSection className="w-full self-stretch" />
     </div>
   );
 }
