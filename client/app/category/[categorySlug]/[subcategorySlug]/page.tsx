@@ -1,4 +1,7 @@
 import React from 'react';
+import ProductListingTemplate from "@/components/global/ProductListingTemplate";
+import Navbar from "@/components/global/navbar/navbarSection";
+import FooterSection from "@/components/global/FooterSection";
 
 interface SubCategoryPageProps {
   params: Promise<{
@@ -22,14 +25,13 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
   const subCategoryTitle = formatSlug(resolvedParams.subcategorySlug);
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-24 min-h-[60vh]">
-      <div className="text-sm text-gray-500 mb-4 dark:text-gray-400">
-        Home &gt; {categoryTitle} &gt; {subCategoryTitle}
+    <div className="flex w-full max-w-full flex-1 flex-col items-center">
+      <Navbar />
+      <div className="w-full">
+        {/* Pass the subcategory as the title */}
+        <ProductListingTemplate categoryTitle={subCategoryTitle} />
       </div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">{subCategoryTitle}</h1>
-      <p className="text-gray-600 dark:text-gray-400">
-        Products for {subCategoryTitle} under {categoryTitle} will be displayed here. (Design will be done later)
-      </p>
+      <FooterSection className="w-full self-stretch" />
     </div>
   );
 }

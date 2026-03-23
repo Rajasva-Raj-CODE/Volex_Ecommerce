@@ -51,7 +51,7 @@ export function MobileMenu() {
                     <HugeiconsIcon icon={Menu01Icon} size={28} />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[100vw] sm:w-[400px] p-0 flex flex-col bg-white border-none [&>button]:hidden">
+            <SheetContent side="left" className="w-screen sm:w-[400px] p-0 flex flex-col bg-white border-none [&>button]:hidden">
                 {/* Custom Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                     {activeCategory ? (
@@ -105,7 +105,7 @@ export function MobileMenu() {
                                 <HugeiconsIcon icon={Store01Icon} size={18} className="text-primary" />
                                 <span className="text-[13px] font-semibold text-gray-900">Store Locator</span>
                             </button>
-                            <div className="w-[1px] h-8 bg-gray-200" />
+                            <div className="w-px h-8 bg-gray-200" />
                             <button className="flex-1 flex items-center justify-center gap-2 py-3.5 hover:bg-gray-50 transition-colors">
                                 <HugeiconsIcon icon={HeadphonesIcon} size={18} className="text-primary" />
                                 <span className="text-[13px] font-semibold text-gray-900">Help Center</span>
@@ -191,14 +191,14 @@ export function MobileMenu() {
                         {/* Banners */}
                         {activeCategory.banners && (
                             <div className="px-4 pb-8 flex items-center justify-between gap-3 mt-4">
-                                <div className={`flex flex-col justify-end w-1/2 rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-500 p-4 aspect-[4/3] relative overflow-hidden shadow-sm`}>
+                                <div className={`flex flex-col justify-end w-1/2 rounded-2xl bg-linear-to-br from-cyan-400 to-teal-500 p-4 aspect-4/3 relative overflow-hidden shadow-sm`}>
                                     <div className="z-10 relative">
                                         <div className="text-[10px] font-bold italic text-white/90">Trending</div>
                                         <div className="text-sm font-black text-white mt-1 leading-tight uppercase">5G Smartphones</div>
                                         <div className="text-[10px] font-bold text-white uppercase mt-1">UP TO 35% OFF</div>
                                     </div>
                                 </div>
-                                <div className={`flex flex-col justify-end w-1/2 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 p-4 aspect-[4/3] relative overflow-hidden shadow-sm`}>
+                                <div className={`flex flex-col justify-end w-1/2 rounded-2xl bg-linear-to-br from-gray-100 to-gray-200 p-4 aspect-4/3 relative overflow-hidden shadow-sm`}>
                                     <div className="z-10 relative">
                                         <div className="text-[10px] italic text-gray-600">Smart</div>
                                         <div className="text-sm font-black text-gray-900 mt-1 leading-tight uppercase">Tech Accessories</div>
