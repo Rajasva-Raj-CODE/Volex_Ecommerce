@@ -1,7 +1,7 @@
 import React from 'react';
-import ProductListingTemplate from "@/components/global/ProductListingTemplate";
-import Navbar from "@/components/global/navbar/navbarSection";
-import FooterSection from "@/components/global/FooterSection";
+import ProductListingTemplate from "@/components/shared/ProductListingTemplate";
+import Navbar from "@/components/layout/navbar/Navbar";
+import Footer from "@/components/layout/Footer";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -11,8 +11,7 @@ interface CategoryPageProps {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const resolvedParams = await params;
-  
-  // Format the slug back to a readable title (optional, you will probably fetch from DB later)
+
   const formatSlug = (slug: string) => {
     return slug
       .split('-')
@@ -28,7 +27,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <div className="w-full">
         <ProductListingTemplate categoryTitle={title} />
       </div>
-      <FooterSection className="w-full self-stretch" />
+      <Footer className="w-full self-stretch" />
     </div>
   );
 }
