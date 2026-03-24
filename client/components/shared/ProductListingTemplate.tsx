@@ -268,7 +268,7 @@ export default function ProductListingTemplate({ categoryTitle }: ProductListing
                 {/* Product Image */}
                 <div className="w-full h-full relative p-4 transition-transform duration-500 group-hover:scale-105">
                    <img src={prod.image} alt={prod.title} className="w-full h-full object-contain" />
-                </div> 
+                </div>
               </div>
 
               {/* Product Info */}
