@@ -22,7 +22,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const title = formatSlug(resolvedParams.categorySlug);
 
   return (
-    <div className="flex w-full max-w-full flex-1 flex-col items-center">
+    <div className="flex w-full max-w-full flex-1 flex-col items-center bg-[#0f0f0f]">
       <Navbar />
       <div className="w-full">
         <ProductListingTemplate categoryTitle={title} />
