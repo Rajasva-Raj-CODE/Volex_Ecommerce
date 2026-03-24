@@ -23,7 +23,7 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
   const subCategoryTitle = formatSlug(resolvedParams.subcategorySlug);
 
   return (
-    <div className="flex w-full max-w-full flex-1 flex-col items-center">
+    <div className="flex w-full max-w-full flex-1 flex-col items-center bg-[#0f0f0f]">
       <Navbar />
       <div className="w-full">
         <ProductListingTemplate categoryTitle={subCategoryTitle} />
