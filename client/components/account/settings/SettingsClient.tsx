@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Settings01Icon, LockPasswordIcon, Notification03Icon, EyeIcon, EyeOffIcon, Delete01Icon } from "@hugeicons/core-free-icons";
+import { Settings01Icon, LockPasswordIcon, Notification03Icon, EyeIcon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 
 const SETTING_SECTIONS = [
