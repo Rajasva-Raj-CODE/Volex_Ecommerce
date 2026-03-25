@@ -8,9 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
     Search01Icon,
     Location01Icon,
-    Store01Icon,
     FavouriteIcon,
-    UserIcon,
     ShoppingCart01Icon,
     Mic01Icon,
     Cancel01Icon
@@ -19,6 +17,7 @@ import Link from "next/link";
 import { NAV_CATEGORIES } from "./nav-data";
 import { MegaDropdown } from "./MegaMenu";
 import { MobileMenu } from "./MobileMenu";
+import UserDropdown from "./UserDropdown";
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
@@ -175,20 +174,15 @@ export default function Navbar() {
 
                         {/* Utility icons */}
                         <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
-                            <Button variant="ghost" size="sm" className="hidden lg:flex gap-2 text-sm text-white/70 hover:text-[#49A5A2] hover:bg-white/5 rounded-full px-4">
-                                <HugeiconsIcon icon={Store01Icon} size={20} />
-                                <span className="font-semibold">Stores</span>
-                            </Button>
 
-                            <Button variant="ghost" size="icon" className="hidden lg:flex text-white/70 hover:text-[#49A5A2] hover:bg-white/5 rounded-full">
+
+                            <Button variant="ghost" size="lg" className="hidden lg:flex text-white/70 hover:text-[#49A5A2] hover:bg-white/5 rounded-full cursor-pointer">
                                 <HugeiconsIcon icon={FavouriteIcon} size={22} />
                             </Button>
 
-                            <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/5 hover:text-[#49A5A2] rounded-full">
-                                <HugeiconsIcon icon={UserIcon} size={24} />
-                            </Button>
+                            <UserDropdown />
 
-                            <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/5 hover:text-[#49A5A2] rounded-full ml-1">
+                            <Button variant="ghost" size="lg" className="relative text-white hover:bg-white/5 hover:text-[#49A5A2] rounded-full ml-1 cursor-pointer">
                                 <HugeiconsIcon icon={ShoppingCart01Icon} size={24} />
                                 <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#49A5A2] text-[10px] font-bold text-white">0</span>
                             </Button>
