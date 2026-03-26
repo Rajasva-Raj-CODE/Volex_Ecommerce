@@ -128,6 +128,63 @@ export interface CuratedItem {
   tabId: string;
 }
 
+// ─── Product Detail ──────────────────────────────────────────────
+export interface ProductDetailImage {
+  id: string;
+  src: string;
+  alt: string;
+}
+
+export interface ProductHighlight {
+  text: string;
+}
+
+export interface ProductSpecGroup {
+  groupName: string;
+  specs: { label: string; value: string }[];
+}
+
+export interface ProductVariantGroup {
+  name: string;
+  options: { label: string; selected?: boolean }[];
+}
+
+export interface ProductOverviewSection {
+  heading: string;
+  description: string;
+}
+
+export interface ProductDetail {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  categorySlug: string;
+  subcategory?: string;
+  brand: string;
+  images: ProductDetailImage[];
+  price: number;
+  originalPrice: number;
+  discount: string;
+  savings: string;
+  rating: string;
+  reviews: string;
+  ratingCount?: string;
+  deliveryDate: string;
+  deliveryFee?: string;
+  inStock: boolean;
+  bankOffers: { id: string; bank: string; description: string }[];
+  highlights: ProductHighlight[];
+  specGroups: ProductSpecGroup[];
+  overview?: ProductOverviewSection[];
+  variants?: ProductVariantGroup[];
+  relatedProductIds: string[];
+  emiStartsAt?: string;
+  noCostEmi?: boolean;
+  warranty?: string;
+  extraDiscount?: string;
+}
+
 // ─── Footer ──────────────────────────────────────────────────────
 export interface FooterLinkColumn {
   heading: string;
