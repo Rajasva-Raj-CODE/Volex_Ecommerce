@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { generateProductSlug } from "@/lib/product-data";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -314,7 +316,7 @@ export default function ProductListingTemplate({ categoryTitle }: ProductListing
         {/* Product Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {MOCK_PRODUCTS.map((prod) => (
-            <div key={prod.id} className="group flex cursor-pointer flex-col">
+            <Link key={prod.id} href={`/product/${generateProductSlug(prod.title)}`} className="group flex flex-col">
 
               {/* Image Card */}
               <div className="relative mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#1a1a1a] p-6 transition-colors group-hover:border-[#49A5A2]/30 sm:aspect-[4/3]">
@@ -400,7 +402,7 @@ export default function ProductListingTemplate({ categoryTitle }: ProductListing
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
