@@ -2,42 +2,37 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Settings01Icon, LockPasswordIcon, Notification03Icon, EyeIcon, Delete01Icon } from "@hugeicons/core-free-icons";
-import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 const SETTING_SECTIONS = [
     {
         icon: Notification03Icon,
         title: "Notification Preferences",
         items: [
-            { label: "Order updates via Email", defaultOn: true },
-            { label: "Order updates via SMS", defaultOn: true },
-            { label: "Promotional offers via Email", defaultOn: false },
-            { label: "Price drop alerts", defaultOn: true },
+            { id: "notif-email",  label: "Order updates via Email",      defaultOn: true },
+            { id: "notif-sms",    label: "Order updates via SMS",         defaultOn: true },
+            { id: "notif-promo",  label: "Promotional offers via Email",  defaultOn: false },
+            { id: "notif-price",  label: "Price drop alerts",             defaultOn: true },
         ],
     },
     {
         icon: EyeIcon,
         title: "Privacy",
         items: [
-            { label: "Show my wishlist publicly", defaultOn: false },
-            { label: "Allow personalised recommendations", defaultOn: true },
+            { id: "privacy-wishlist", label: "Show my wishlist publicly",          defaultOn: false },
+            { id: "privacy-reco",     label: "Allow personalised recommendations", defaultOn: true },
         ],
     },
-];
+] as const;
 
-function Toggle({ defaultOn }: { defaultOn: boolean }) {
-    const [on, setOn] = useState(defaultOn);
-    return (
-        <button
-            onClick={() => setOn(!on)}
-            className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 cursor-pointer flex items-center ${on ? "bg-[#49A5A2]" : "bg-white/20"}`}
-        >
-            <span
-                className={`absolute w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${on ? "translate-x-5" : "translate-x-0.5"}`}
-            />
-        </button>
-    );
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SettingsClient() {
     return (
@@ -46,61 +41,75 @@ export default function SettingsClient() {
 
             {/* Toggle sections */}
             {SETTING_SECTIONS.map((section) => (
-                <div key={section.title} className="rounded-xl border border-white/[0.08] bg-[#1a1a1a]/60 p-5">
-                    <div className="flex items-center gap-2.5 mb-4">
+                <div key={section.title} className="rounded-xl border border-white/8 bg-[#1a1a1a]/60 p-5 space-y-4">
+                    <div className="flex items-center gap-2.5">
                         <HugeiconsIcon icon={section.icon} size={17} className="text-[#49A5A2]" />
                         <h2 className="text-white text-[14px] font-semibold">{section.title}</h2>
                     </div>
+                    <Separator className="bg-white/6" />
                     <div className="space-y-4">
                         {section.items.map((item) => (
-                            <div key={item.label} className="flex items-center justify-between gap-4">
-                                <span className="text-white/60 text-[13px]">{item.label}</span>
-                                <Toggle defaultOn={item.defaultOn} />
+                            <div key={item.id} className="flex items-center justify-between gap-4">
+                                <Label htmlFor={item.id} className="text-white/60 text-[13px] cursor-pointer">
+                                    {item.label}
+                                </Label>
+                                <Switch
+                                    id={item.id}
+                                    defaultChecked={item.defaultOn}
+                                    className="data-checked:bg-[#49A5A2]"
+                                />
                             </div>
                         ))}
                     </div>
                 </div>
             ))}
 
-            {/* Password */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#1a1a1a]/60 p-5">
-                <div className="flex items-center gap-2.5 mb-4">
+            {/* Change Password */}
+            <div className="rounded-xl border border-white/8 bg-[#1a1a1a]/60 p-5 space-y-4">
+                <div className="flex items-center gap-2.5">
                     <HugeiconsIcon icon={LockPasswordIcon} size={17} className="text-[#49A5A2]" />
                     <h2 className="text-white text-[14px] font-semibold">Change Password</h2>
                 </div>
-                <div className="space-y-4">
-                    {["Current Password", "New Password", "Confirm New Password"].map((label) => (
-                        <div key={label}>
-                            <label className="block text-white/40 text-[11px] font-medium uppercase tracking-wider mb-1.5">
+                <Separator className="bg-white/6" />
+                <div className="space-y-3">
+                    {[
+                        { id: "cur-pass",  label: "Current Password" },
+                        { id: "new-pass",  label: "New Password" },
+                        { id: "conf-pass", label: "Confirm New Password" },
+                    ].map(({ id, label }) => (
+                        <div key={id} className="space-y-1.5">
+                            <Label htmlFor={id} className="text-white/40 text-[11px] uppercase tracking-wider">
                                 {label}
-                            </label>
-                            <div className="h-11 rounded-lg border border-white/[0.08] bg-white/[0.04] px-4 flex items-center">
-                                <input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    className="flex-1 bg-transparent text-white/70 text-[14px] outline-none placeholder:text-white/20"
-                                />
-                            </div>
+                            </Label>
+                            <Input
+                                id={id}
+                                type="password"
+                                placeholder="••••••••"
+                                className="h-11 bg-white/4 border-white/10 text-white placeholder:text-white/20 focus-visible:border-[#49A5A2]/60 focus-visible:ring-[#49A5A2]/20"
+                            />
                         </div>
                     ))}
-                    <button className="px-8 h-10 rounded-lg bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[13px] font-semibold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_4px_14px_rgba(73,165,162,0.25)] cursor-pointer">
+                    <Button className="mt-2 bg-linear-to-r from-[#49A5A2] to-[#3d8d8a] text-white hover:from-[#5ab5b2] hover:to-[#49A5A2] shadow-[0_4px_14px_rgba(73,165,162,0.25)] cursor-pointer">
                         Update Password
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Danger Zone */}
-            <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-5">
-                <div className="flex items-center gap-2.5 mb-3">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/4 p-5 space-y-3">
+                <div className="flex items-center gap-2.5">
                     <HugeiconsIcon icon={Delete01Icon} size={17} className="text-red-400" />
                     <h2 className="text-red-400 text-[14px] font-semibold">Danger Zone</h2>
                 </div>
-                <p className="text-white/40 text-[12.5px] mb-4 leading-relaxed">
+                <p className="text-white/40 text-[12.5px] leading-relaxed">
                     Permanently delete your account and all associated data. This action cannot be undone.
                 </p>
-                <button className="px-6 h-10 rounded-lg border border-red-500/40 text-red-400 text-[13px] font-semibold hover:bg-red-500/10 transition-all duration-200 cursor-pointer">
+                <Button
+                    variant="outline"
+                    className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/60 cursor-pointer"
+                >
                     Delete Account
-                </button>
+                </Button>
             </div>
         </div>
     );
