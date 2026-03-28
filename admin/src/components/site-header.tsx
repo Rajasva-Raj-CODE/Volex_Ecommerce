@@ -8,6 +8,7 @@ import { Search, Bell } from "lucide-react";
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
   "/products": "Products",
+  "/products/add": "Add Product",
   "/categories": "Categories",
   "/orders": "Orders",
   "/customers": "Customers",
@@ -17,7 +18,10 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function SiteHeader() {
   const location = useLocation();
-  const title = PAGE_TITLES[location.pathname] || "Dashboard";
+  let title = PAGE_TITLES[location.pathname] || "Dashboard";
+  if (location.pathname.startsWith("/products/edit/")) {
+    title = "Edit Product";
+  }
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

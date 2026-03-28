@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 const NOTIFICATIONS = [
   { label: "New order alerts", desc: "Get notified for every new order", defaultOn: true },

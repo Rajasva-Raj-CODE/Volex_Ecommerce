@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -21,10 +20,6 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import {
   TrendingUpIcon,
   TrendingDownIcon,
-  ShoppingCart,
-  Users,
-  Package,
-  AlertTriangle,
 } from "lucide-react";
 
 const SUPER_ADMIN_STATS = [

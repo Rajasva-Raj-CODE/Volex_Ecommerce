@@ -5,6 +5,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
+import AddProduct from "@/pages/AddProduct";
+import EditProduct from "@/pages/EditProduct";
 import Categories from "@/pages/Categories";
 import Orders from "@/pages/Orders";
 import Customers from "@/pages/Customers";
@@ -19,6 +21,8 @@ export default function App() {
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<Products />} />
+          <Route path="products/add" element={<AddProduct />} />
+          <Route path="products/edit/:id" element={<EditProduct />} />
           <Route path="categories" element={<Categories />} />
           <Route element={<RequireRole allowed={["super_admin"]} />}>
             <Route path="orders" element={<Orders />} />

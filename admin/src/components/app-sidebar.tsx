@@ -8,7 +8,6 @@ import {
   Users,
   UserCog,
   Settings,
-  LogOut,
   ChevronsUpDownIcon,
   LogOutIcon,
 } from "lucide-react";
@@ -40,7 +39,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const NAV_ITEMS = [
+import type { Role } from "@/lib/types";
+
+const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; roles: Role[] }[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["super_admin", "product_manager"] },
   { title: "Products", url: "/products", icon: Package, roles: ["super_admin", "product_manager"] },
   { title: "Categories", url: "/categories", icon: FolderTree, roles: ["super_admin", "product_manager"] },

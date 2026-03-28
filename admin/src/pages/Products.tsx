@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Plus, Pencil, Trash2, EllipsisVerticalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,16 +21,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const MOCK_PRODUCTS = [
-  { id: "1", name: "Croma 80 cm HD Ready LED TV", category: "TV & Entertainment", price: 9990, stock: 45, status: "Active", image: "📺" },
-  { id: "2", name: "Croma 5.1 Channel 340W Soundbar", category: "Audio", price: 10990, stock: 12, status: "Active", image: "🔊" },
-  { id: "3", name: "Samsung Galaxy S24 Ultra 5G", category: "Mobiles", price: 69999, stock: 28, status: "Active", image: "📱" },
-  { id: "4", name: "Apple MacBook Air M3 13 inch", category: "Laptops", price: 89990, stock: 8, status: "Low Stock", image: "💻" },
-  { id: "5", name: "Sony WH-1000XM5 Headphones", category: "Audio", price: 22990, stock: 34, status: "Active", image: "🎧" },
-  { id: "6", name: "Canon EOS R50 Mirrorless Camera", category: "Cameras", price: 62990, stock: 5, status: "Low Stock", image: "📷" },
-  { id: "7", name: "Apple iPad Air 11 inch M2", category: "Tablets", price: 49900, stock: 19, status: "Active", image: "📱" },
-  { id: "8", name: "JBL Flip 6 Bluetooth Speaker", category: "Audio", price: 8999, stock: 52, status: "Active", image: "🔊" },
-  { id: "9", name: "Apple Watch Series 9 GPS 45mm", category: "Wearables", price: 36900, stock: 15, status: "Active", image: "⌚" },
-  { id: "10", name: "Samsung 253L Frost Free Fridge", category: "Appliances", price: 24990, stock: 0, status: "Out of Stock", image: "🧊" },
+  { id: "1", name: "iPhone 16 Pro Max 256GB", category: "Phones", subcategory: "iPhone", price: 159900, stock: 12, status: "Active" },
+  { id: "2", name: "Samsung Galaxy S24 Ultra", category: "Phones", subcategory: "Samsung Galaxy", price: 129999, stock: 18, status: "Active" },
+  { id: "3", name: "OnePlus 12 256GB", category: "Phones", subcategory: "OnePlus", price: 64999, stock: 14, status: "Active" },
+  { id: "4", name: "MacBook Air M3 13 inch", category: "Laptops", subcategory: "MacBook", price: 114900, stock: 6, status: "Active" },
+  { id: "5", name: "Sony WH-1000XM5", category: "Audio", subcategory: "Headphones", price: 29990, stock: 20, status: "Active" },
+  { id: "6", name: "Canon EOS R50", category: "Cameras", subcategory: "Mirrorless", price: 62990, stock: 5, status: "Low Stock" },
+  { id: "7", name: "iPad Air M2 11 inch", category: "Tablets", subcategory: "iPad", price: 59900, stock: 10, status: "Active" },
+  { id: "8", name: "JBL Flip 6", category: "Audio", subcategory: "Speakers", price: 8999, stock: 40, status: "Active" },
+  { id: "9", name: "Apple Watch Series 9", category: "Wearables", subcategory: "Smartwatch", price: 44900, stock: 15, status: "Active" },
+  { id: "10", name: "Samsung Galaxy S24+", category: "Phones", subcategory: "Samsung Galaxy", price: 99999, stock: 0, status: "Out of Stock" },
 ];
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -40,9 +41,13 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function Products() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
-  const filtered = MOCK_PRODUCTS.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = MOCK_PRODUCTS.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase()) ||
+      p.subcategory.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -52,9 +57,8 @@ export default function Products() {
           <h1 className="text-xl font-semibold">Products</h1>
           <p className="text-sm text-muted-foreground">{MOCK_PRODUCTS.length} products total</p>
         </div>
-        <Button>
-          <Plus />
-          Add Product
+        <Button onClick={() => navigate("/products/add")}>
+          <Plus /> Add Product
         </Button>
       </div>
 
@@ -64,7 +68,7 @@ export default function Products() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
+            placeholder="Search products, categories..."
             className="h-8 pl-8"
           />
         </div>
@@ -86,14 +90,15 @@ export default function Products() {
             {filtered.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-sm">
-                      {product.image}
-                    </span>
-                    <span className="font-medium">{product.name}</span>
+                  <span className="font-medium">{product.name}</span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Badge variant="secondary" className="text-[10px]">{product.category}</Badge>
+                    <span className="text-xs">&rarr;</span>
+                    <Badge variant="outline" className="text-[10px]">{product.subcategory}</Badge>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{product.category}</TableCell>
                 <TableCell className="text-right tabular-nums">₹{product.price.toLocaleString("en-IN")}</TableCell>
                 <TableCell className="text-right text-muted-foreground tabular-nums">{product.stock}</TableCell>
                 <TableCell>
@@ -112,7 +117,7 @@ export default function Products() {
                       <span className="sr-only">Open menu</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-32">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/products/edit/${product.id}`)}>
                         <Pencil /> Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem>Make a copy</DropdownMenuItem>
