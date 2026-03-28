@@ -12,6 +12,10 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   dashboard: LayoutDashboard,
@@ -39,18 +43,16 @@ export default function AdminSidebar() {
   const visibleItems = NAV_ITEMS.filter((item) => hasRole(item.roles));
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-white/10 bg-[#0a0a0a]">
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b border-white/10 px-6">
-        <span className="text-xl font-black tracking-tight text-white">
-          Volte<span className="text-[#49A5A2]">X</span>
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r bg-background">
+      <div className="flex h-16 items-center border-b px-6">
+        <span className="text-xl font-black tracking-tight">
+          Volte<span className="text-primary">X</span>
         </span>
-        <span className="ml-2 rounded-md bg-[#49A5A2]/10 px-2 py-0.5 text-[10px] font-bold text-[#49A5A2]">
+        <Badge variant="secondary" className="ml-2 text-[10px]">
           ADMIN
-        </span>
+        </Badge>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="flex flex-col gap-1">
           {visibleItems.map((item) => {
@@ -64,8 +66,8 @@ export default function AdminSidebar() {
                   cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-[#49A5A2]/10 text-[#49A5A2]"
-                      : "text-white/60 hover:bg-white/5 hover:text-white"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )
                 }
               >
@@ -77,28 +79,30 @@ export default function AdminSidebar() {
         </div>
       </nav>
 
-      {/* User info + Logout */}
-      <div className="border-t border-white/10 p-4">
+      <Separator />
+
+      <div className="p-4">
         <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#49A5A2]/20 text-sm font-bold text-[#49A5A2]">
-            {user?.name.charAt(0)}
-          </div>
+          <Avatar>
+            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">
+            <p className="truncate text-sm font-semibold">
               {user?.name}
             </p>
-            <p className="truncate text-xs text-white/40">
+            <p className="truncate text-xs text-muted-foreground">
               {user?.role === "super_admin" ? "Super Admin" : "Product Manager"}
             </p>
           </div>
         </div>
-        <button
+        <Button
+          variant="ghost"
           onClick={logout}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white/50 transition-colors hover:bg-white/5 hover:text-red-400"
+          className="w-full justify-start text-muted-foreground hover:text-destructive"
         >
           <LogOut size={16} />
           Logout
-        </button>
+        </Button>
       </div>
     </aside>
   );
