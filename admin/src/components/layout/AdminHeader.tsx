@@ -21,7 +21,7 @@ export default function AdminHeader() {
             3
           </span>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ">
           <Avatar>
             <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
           </Avatar>
