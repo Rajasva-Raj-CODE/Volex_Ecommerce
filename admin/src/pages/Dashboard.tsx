@@ -1,35 +1,43 @@
 import { useAuth } from "@/lib/auth-context";
-import {
-  Package,
-  ShoppingCart,
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import {
+  TrendingUpIcon,
+  TrendingDownIcon,
+  ShoppingCart,
+  Users,
+  Package,
+  AlertTriangle,
+} from "lucide-react";
 
 const SUPER_ADMIN_STATS = [
-  { label: "Total Revenue", value: "₹12,45,890", change: "+12.5%", up: true, icon: TrendingUp },
-  { label: "Total Orders", value: "1,284", change: "+8.2%", up: true, icon: ShoppingCart },
-  { label: "Total Customers", value: "3,421", change: "+15.3%", up: true, icon: Users },
-  { label: "Total Products", value: "486", change: "-2.1%", up: false, icon: Package },
+  { label: "Total Revenue", value: "₹12,45,890", change: "+12.5%", up: true, description: "Trending up this month", detail: "Revenue for the last 6 months" },
+  { label: "Total Orders", value: "1,284", change: "+8.2%", up: true, description: "Strong order volume", detail: "Orders processed this month" },
+  { label: "Total Customers", value: "3,421", change: "+15.3%", up: true, description: "Growing customer base", detail: "Active customers on platform" },
+  { label: "Total Products", value: "486", change: "-2.1%", up: false, description: "Slight decrease", detail: "Products in catalog" },
 ];
 
 const PM_STATS = [
-  { label: "Total Products", value: "486", change: "-2.1%", up: false, icon: Package },
-  { label: "Low Stock Items", value: "23", change: "+5", up: false, icon: AlertTriangle },
-  { label: "New This Month", value: "18", change: "+6", up: true, icon: TrendingUp },
+  { label: "Total Products", value: "486", change: "-2.1%", up: false, description: "Slight decrease", detail: "Products in catalog" },
+  { label: "Low Stock Items", value: "23", change: "+5", up: false, description: "Needs attention", detail: "Items below threshold" },
+  { label: "New This Month", value: "18", change: "+6", up: true, description: "Growing catalog", detail: "Products added recently" },
 ];
 
 const RECENT_ORDERS = [
@@ -53,81 +61,76 @@ export default function Dashboard() {
   const stats = isSuperAdmin ? SUPER_ADMIN_STATS : PM_STATS;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Welcome back, {user?.name}
-        </p>
+    <>
+      {/* Section Cards */}
+      <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.label} className="@container/card">
+            <CardHeader>
+              <CardDescription>{stat.label}</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {stat.value}
+              </CardTitle>
+              <CardAction>
+                <Badge variant="outline">
+                  {stat.up ? <TrendingUpIcon /> : <TrendingDownIcon />}
+                  {stat.change}
+                </Badge>
+              </CardAction>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1.5 text-sm">
+              <div className="line-clamp-1 flex gap-2 font-medium">
+                {stat.description}{" "}
+                {stat.up ? (
+                  <TrendingUpIcon className="size-4" />
+                ) : (
+                  <TrendingDownIcon className="size-4" />
+                )}
+              </div>
+              <div className="text-muted-foreground">{stat.detail}</div>
+            </CardFooter>
+          </Card>
+        ))}
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <CardContent className="pt-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {stat.label}
-                  </span>
-                  <Icon size={18} className="text-muted-foreground" />
-                </div>
-                <p className="text-2xl font-black text-foreground">{stat.value}</p>
-                <div className="mt-1 flex items-center gap-1">
-                  {stat.up ? (
-                    <ArrowUpRight size={14} className="text-green-400" />
-                  ) : (
-                    <ArrowDownRight size={14} className="text-red-400" />
-                  )}
-                  <span
-                    className={`text-xs font-semibold ${stat.up ? "text-green-400" : "text-red-400"}`}
-                  >
-                    {stat.change}
-                  </span>
-                  <span className="text-xs text-muted-foreground">vs last month</span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Chart */}
+      {isSuperAdmin && <ChartAreaInteractive />}
 
+      {/* Recent Orders Table */}
       {isSuperAdmin && (
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle>Recent Orders</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
+        <div className="overflow-hidden rounded-lg border">
+          <div className="px-4 py-3">
+            <h2 className="text-base font-medium">Recent Orders</h2>
+            <p className="text-sm text-muted-foreground">Latest orders from customers</p>
+          </div>
+          <Table>
+            <TableHeader className="bg-muted">
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {RECENT_ORDERS.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium text-primary">{order.id}</TableCell>
+                  <TableCell>{order.customer}</TableCell>
+                  <TableCell className="text-muted-foreground">{order.date}</TableCell>
+                  <TableCell className="text-right tabular-nums">{order.total}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_VARIANT[order.status] ?? "secondary"}>
+                      {order.status}
+                    </Badge>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {RECENT_ORDERS.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-semibold text-primary">{order.id}</TableCell>
-                    <TableCell>{order.customer}</TableCell>
-                    <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                    <TableCell className="font-semibold">{order.total}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[order.status] ?? "secondary"}>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
-    </div>
+    </>
   );
 }

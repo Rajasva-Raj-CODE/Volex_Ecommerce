@@ -1,12 +1,24 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, ZapIcon } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,74 +39,68 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            Volte<span className="text-primary">X</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Admin Panel</p>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <a href="#" className="flex items-center gap-2 self-center font-medium">
+          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <ZapIcon className="size-4" />
+          </div>
+          VolteX Admin
+        </a>
+        <div className={cn("flex flex-col gap-6")}>
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Welcome back</CardTitle>
+              <CardDescription>
+                Sign in to your admin account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <FieldGroup>
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircleIcon />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <Field>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@voltex.com"
+                      required
+                    />
+                  </Field>
+                  <Field>
+                    <div className="flex items-center">
+                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </Field>
+                  <Field>
+                    <Button type="submit">Sign In</Button>
+                  </Field>
+                </FieldGroup>
+              </form>
+            </CardContent>
+          </Card>
+          <FieldDescription className="px-6 text-center text-xs text-muted-foreground">
+            <span className="font-semibold text-primary">Super Admin:</span> admin@voltex.com / admin123
+            {" "}&middot;{" "}
+            <span className="font-semibold text-primary">Product Mgr:</span> pm@voltex.com / pm123
+          </FieldDescription>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircleIcon />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@voltex.com"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full">
-                Sign In
-              </Button>
-
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                  Demo Credentials
-                </p>
-                <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                  <p>
-                    <span className="font-semibold text-primary">Super Admin:</span>{" "}
-                    admin@voltex.com / admin123
-                  </p>
-                  <p>
-                    <span className="font-semibold text-primary">Product Mgr:</span>{" "}
-                    pm@voltex.com / pm123
-                  </p>
-                </div>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

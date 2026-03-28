@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 
 const MOCK_CUSTOMERS = [
@@ -22,27 +22,29 @@ const MOCK_CUSTOMERS = [
 
 export default function Customers() {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-foreground">Customers</h1>
-        <p className="text-sm text-muted-foreground">{MOCK_CUSTOMERS.length} customers</p>
-      </div>
-
-      <div className="mb-4 max-w-sm">
-        <div className="relative">
-          <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search customers..." className="pl-8" />
+    <>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Customers</h1>
+          <p className="text-sm text-muted-foreground">{MOCK_CUSTOMERS.length} customers</p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card">
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search customers..." className="h-8 pl-8" />
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Joined</TableHead>
-              <TableHead>Orders</TableHead>
-              <TableHead>Total Spent</TableHead>
+              <TableHead className="text-right">Orders</TableHead>
+              <TableHead className="text-right">Total Spent</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -51,18 +53,18 @@ export default function Customers() {
               <TableRow key={c.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar>
+                    <Avatar className="size-8">
                       <AvatarFallback>{c.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{c.name}</p>
+                      <p className="font-medium">{c.name}</p>
                       <p className="text-xs text-muted-foreground">{c.email}</p>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{c.joined}</TableCell>
-                <TableCell className="text-muted-foreground">{c.orders}</TableCell>
-                <TableCell className="font-semibold">₹{c.spent.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="text-right text-muted-foreground tabular-nums">{c.orders}</TableCell>
+                <TableCell className="text-right font-medium tabular-nums">₹{c.spent.toLocaleString("en-IN")}</TableCell>
                 <TableCell>
                   <Badge variant={c.status === "Active" ? "outline" : "secondary"}>
                     {c.status}
@@ -73,6 +75,6 @@ export default function Customers() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </>
   );
 }

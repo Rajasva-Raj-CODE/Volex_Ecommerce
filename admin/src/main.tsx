@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth-context";
@@ -7,8 +7,12 @@ import { Toaster } from "@/components/ui/sonner";
 import App from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+function Root() {
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
+
+  return (
     <BrowserRouter>
       <AuthProvider>
         <TooltipProvider>
@@ -17,5 +21,11 @@ createRoot(document.getElementById("root")!).render(
         </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <Root />
   </StrictMode>
 );

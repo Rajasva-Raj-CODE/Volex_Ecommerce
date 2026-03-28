@@ -1,21 +1,22 @@
 import { useState } from "react";
-import { Search, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, EllipsisVerticalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 const MOCK_PRODUCTS = [
@@ -45,40 +46,40 @@ export default function Products() {
   );
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-foreground">Products</h1>
+          <h1 className="text-xl font-semibold">Products</h1>
           <p className="text-sm text-muted-foreground">{MOCK_PRODUCTS.length} products total</p>
         </div>
         <Button>
-          <Plus size={16} />
+          <Plus />
           Add Product
         </Button>
       </div>
 
-      <div className="mb-4 max-w-sm">
-        <div className="relative">
-          <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products..."
-            className="pl-8"
+            className="h-8 pl-8"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card">
+      <div className="overflow-hidden rounded-lg border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Product</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-right">Stock</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,17 +87,15 @@ export default function Products() {
               <TableRow key={product.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-lg">
+                    <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-sm">
                       {product.image}
                     </span>
-                    <span className="font-semibold">{product.name}</span>
+                    <span className="font-medium">{product.name}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{product.category}</TableCell>
-                <TableCell className="font-semibold">
-                  ₹{product.price.toLocaleString("en-IN")}
-                </TableCell>
-                <TableCell className="text-muted-foreground">{product.stock}</TableCell>
+                <TableCell className="text-right tabular-nums">₹{product.price.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="text-right text-muted-foreground tabular-nums">{product.stock}</TableCell>
                 <TableCell>
                   <Badge variant={STATUS_VARIANT[product.status] ?? "secondary"}>
                     {product.status}
@@ -104,15 +103,22 @@ export default function Products() {
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
-                      <MoreHorizontal size={16} />
+                    <DropdownMenuTrigger
+                      render={
+                        <Button variant="ghost" className="size-8 text-muted-foreground data-open:bg-muted" size="icon" />
+                      }
+                    >
+                      <EllipsisVerticalIcon />
+                      <span className="sr-only">Open menu</span>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-32">
                       <DropdownMenuItem>
-                        <Pencil size={14} /> Edit
+                        <Pencil /> Edit
                       </DropdownMenuItem>
+                      <DropdownMenuItem>Make a copy</DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive">
-                        <Trash2 size={14} /> Delete
+                        <Trash2 /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -122,6 +128,6 @@ export default function Products() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </>
   );
 }

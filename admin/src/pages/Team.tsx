@@ -1,20 +1,21 @@
-import { Plus, MoreHorizontal } from "lucide-react";
+import { Plus, EllipsisVerticalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 const MOCK_TEAM = [
@@ -26,27 +27,27 @@ const MOCK_TEAM = [
 
 export default function Team() {
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-foreground">Team</h1>
+          <h1 className="text-xl font-semibold">Team</h1>
           <p className="text-sm text-muted-foreground">Manage admin users and roles</p>
         </div>
         <Button>
-          <Plus size={16} />
+          <Plus />
           Invite Member
         </Button>
       </div>
 
-      <div className="rounded-xl border bg-card">
+      <div className="overflow-hidden rounded-lg border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Active</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -54,11 +55,11 @@ export default function Team() {
               <TableRow key={member.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar>
+                    <Avatar className="size-8">
                       <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{member.name}</p>
+                      <p className="font-medium">{member.name}</p>
                       <p className="text-xs text-muted-foreground">{member.email}</p>
                     </div>
                   </div>
@@ -74,11 +75,18 @@ export default function Team() {
                 <TableCell className="text-muted-foreground">{member.lastActive}</TableCell>
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
-                      <MoreHorizontal size={16} />
+                    <DropdownMenuTrigger
+                      render={
+                        <Button variant="ghost" className="size-8 text-muted-foreground data-open:bg-muted" size="icon" />
+                      }
+                    >
+                      <EllipsisVerticalIcon />
+                      <span className="sr-only">Open menu</span>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-32">
                       <DropdownMenuItem>Edit Role</DropdownMenuItem>
+                      <DropdownMenuItem>Make a copy</DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive">Remove</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -88,6 +96,6 @@ export default function Team() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </>
   );
 }

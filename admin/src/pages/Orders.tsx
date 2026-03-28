@@ -3,11 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 
 const MOCK_ORDERS = [
@@ -31,28 +31,30 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function Orders() {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-foreground">Orders</h1>
-        <p className="text-sm text-muted-foreground">{MOCK_ORDERS.length} orders</p>
-      </div>
-
-      <div className="mb-4 max-w-sm">
-        <div className="relative">
-          <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search orders..." className="pl-8" />
+    <>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Orders</h1>
+          <p className="text-sm text-muted-foreground">{MOCK_ORDERS.length} orders</p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card">
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search orders..." className="h-8 pl-8" />
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead className="text-right">Items</TableHead>
+              <TableHead className="text-right">Total</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
@@ -60,14 +62,16 @@ export default function Orders() {
           <TableBody>
             {MOCK_ORDERS.map((order) => (
               <TableRow key={order.id}>
-                <TableCell className="font-semibold text-primary">{order.id}</TableCell>
+                <TableCell className="font-medium text-primary">{order.id}</TableCell>
                 <TableCell>
-                  <p className="font-medium">{order.customer}</p>
-                  <p className="text-xs text-muted-foreground">{order.email}</p>
+                  <div>
+                    <p className="font-medium">{order.customer}</p>
+                    <p className="text-xs text-muted-foreground">{order.email}</p>
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                <TableCell className="text-muted-foreground">{order.items}</TableCell>
-                <TableCell className="font-semibold">₹{order.total.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="text-right text-muted-foreground tabular-nums">{order.items}</TableCell>
+                <TableCell className="text-right font-medium tabular-nums">₹{order.total.toLocaleString("en-IN")}</TableCell>
                 <TableCell className="text-muted-foreground">{order.payment}</TableCell>
                 <TableCell>
                   <Badge variant={STATUS_VARIANT[order.status] ?? "secondary"}>
@@ -79,6 +83,6 @@ export default function Orders() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </>
   );
 }

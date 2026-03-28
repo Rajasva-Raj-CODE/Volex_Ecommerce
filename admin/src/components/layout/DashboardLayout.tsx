@@ -1,17 +1,33 @@
 import { Outlet } from "react-router-dom";
-import AdminSidebar from "./AdminSidebar";
-import AdminHeader from "./AdminHeader";
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 
 export default function DashboardLayout() {
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <div className="flex flex-1 flex-col pl-64">
-        <AdminHeader />
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+      <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 64)",
+          "--sidebar-width-icon": "calc(var(--spacing) * 10)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
+              <Outlet />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
