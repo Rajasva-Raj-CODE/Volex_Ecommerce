@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search02Icon, Add02Icon, Edit02Icon, Trash, MoreVerticalIcon, Package01Icon, Copy01Icon, Tag01Icon, Money02Icon, DeliveryPackageIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { Search02Icon, Add02Icon, Edit02Icon, Trash, MoreVerticalIcon, Package01Icon, Copy01Icon, Tag01Icon, Money02Icon, CheckmarkCircle02Icon, DeliveryDelay02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +115,7 @@ export default function Products() {
               </TableHead>
               <TableHead className="text-right font-semibold">
                 <div className="flex items-center justify-end gap-2">
-                  <HugeiconsIcon icon={DeliveryPackageIcon} size={14} className="text-blue-600 hidden sm:flex" />
+                  <HugeiconsIcon icon={DeliveryDelay02Icon}  size={14} className="text-blue-600 hidden sm:flex" />
                   <span>Stock</span>
                 </div>
               </TableHead>
