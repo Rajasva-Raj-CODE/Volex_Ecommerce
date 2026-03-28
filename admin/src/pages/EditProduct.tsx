@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, X, Trash2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, Add02Icon, Cancel01Icon, Trash } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,7 +105,7 @@ export default function EditProduct() {
     <>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate("/products")}>
-          <ArrowLeft />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
         </Button>
         <div>
           <h1 className="text-xl font-semibold">Edit Product</h1>
@@ -239,14 +240,14 @@ export default function EditProduct() {
                       <Input className="col-span-2 h-8" type="number" value={v.price} onChange={(e) => handleVariantChange(v.id, "price", e.target.value)} />
                       <Input className="col-span-2 h-8" type="number" value={v.stock} onChange={(e) => handleVariantChange(v.id, "stock", e.target.value)} />
                       <Button variant="ghost" size="icon" className="col-span-2 size-8 hover:text-destructive" onClick={() => handleRemoveVariant(v.id)}>
-                        <Trash2 />
+                        <HugeiconsIcon icon={Trash} size={14} />
                       </Button>
                     </div>
                   ))}
                 </div>
               )}
               <Button variant="outline" size="sm" onClick={handleAddVariant}>
-                <Plus /> Add Variant
+                <HugeiconsIcon icon={Add02Icon} size={14} /> Add Variant
               </Button>
             </CardContent>
           </Card>
@@ -259,13 +260,13 @@ export default function EditProduct() {
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="gap-1">
                     {tag}
-                    <button onClick={() => handleRemoveTag(tag)}><X className="size-3" /></button>
+                    <button onClick={() => handleRemoveTag(tag)}><HugeiconsIcon icon={Cancel01Icon} size={10} /></button>
                   </Badge>
                 ))}
               </div>
               <div className="flex gap-2">
                 <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())} placeholder="Add tag" className="h-8 max-w-xs" />
-                <Button variant="outline" size="sm" onClick={handleAddTag}><Plus /> Add</Button>
+                <Button variant="outline" size="sm" onClick={handleAddTag}><HugeiconsIcon icon={Add02Icon} size={14} /> Add</Button>
               </div>
             </CardContent>
           </Card>

@@ -1,4 +1,5 @@
-import { Search } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Search02Icon, ShoppingCart01Icon, CheckmarkCircle02Icon, HashtagIcon, UserIcon, Calendar02Icon, ArrowDown01Icon, WalletIcon, Package01Icon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,47 +22,94 @@ const MOCK_ORDERS = [
   { id: "ORD-1277", customer: "Pooja Gupta", email: "pooja@email.com", items: 1, total: 62990, status: "Shipped", date: "22 Mar 2026", payment: "Credit Card" },
 ];
 
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  Pending: "outline",
-  Processing: "secondary",
-  Shipped: "default",
-  Delivered: "outline",
-  Cancelled: "destructive",
+const STATUS_STYLES: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className: string; icon?: typeof CheckmarkCircle02Icon }> = {
+  Pending: { variant: "outline", className: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50" },
+  Processing: { variant: "secondary", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
+  Shipped: { variant: "default", className: "bg-purple-50 text-purple-700 hover:bg-purple-50" },
+  Delivered: { variant: "outline", className: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50" },
+  Cancelled: { variant: "destructive", className: "bg-red-50 text-red-700 hover:bg-red-50" },
+};
+
+const PAYMENT_COLORS: Record<string, string> = {
+  "Credit Card": "bg-blue-100 text-blue-700",
+  "Debit Card": "bg-indigo-100 text-indigo-700",
+  "UPI": "bg-green-100 text-green-700",
+  "EMI": "bg-purple-100 text-purple-700",
 };
 
 export default function Orders() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Orders</h1>
-          <p className="text-sm text-muted-foreground">{MOCK_ORDERS.length} orders</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <HugeiconsIcon icon={ShoppingCart01Icon} size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">Orders</h1>
+            <p className="text-sm text-muted-foreground">{MOCK_ORDERS.length} orders</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative max-w-sm flex-1">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search orders..." className="h-8 pl-8" />
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <HugeiconsIcon icon={Search02Icon} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search orders..." className="pl-9 h-9" />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
-          <TableHeader className="bg-muted">
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Items</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Status</TableHead>
+          <TableHeader>
+            <TableRow className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b">
+              <TableHead className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={HashtagIcon} size={14} className="text-purple-600 hidden sm:flex" />
+                  <span>Order ID</span>
+                </div>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={UserIcon} size={14} className="text-blue-600 hidden sm:flex" />
+                  <span>Customer</span>
+                </div>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={Calendar02Icon} size={14} className="text-amber-600 hidden sm:flex" />
+                  <span>Date</span>
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-semibold">
+                <div className="flex items-center justify-end gap-2">
+                  <HugeiconsIcon icon={Package01Icon} size={14} className="text-indigo-600 hidden sm:flex" />
+                  <span>Items</span>
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-semibold">
+                <div className="flex items-center justify-end gap-2">
+                  <HugeiconsIcon icon={ArrowDown01Icon} size={14} className="text-emerald-600 hidden sm:flex" />
+                  <span>Total</span>
+                </div>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={WalletIcon} size={14} className="text-rose-600 hidden sm:flex" />
+                  <span>Payment</span>
+                </div>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} className="text-cyan-600 hidden sm:flex" />
+                  <span>Status</span>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {MOCK_ORDERS.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium text-primary">{order.id}</TableCell>
                 <TableCell>
                   <div>
@@ -70,11 +118,16 @@ export default function Orders() {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                <TableCell className="text-right text-muted-foreground tabular-nums">{order.items}</TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">{order.items}</TableCell>
                 <TableCell className="text-right font-medium tabular-nums">₹{order.total.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-muted-foreground">{order.payment}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[order.status] ?? "secondary"}>
+                  <Badge className={`${PAYMENT_COLORS[order.payment] || "bg-gray-100 text-gray-700"} text-[10px] font-medium border-0`}>
+                    {order.payment}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={STATUS_STYLES[order.status]?.className || ""} variant={STATUS_STYLES[order.status]?.variant || "secondary"}>
+                    {order.status === "Delivered" && <HugeiconsIcon icon={CheckmarkCircle02Icon} size={10} className="mr-1" />}
                     {order.status}
                   </Badge>
                 </TableCell>

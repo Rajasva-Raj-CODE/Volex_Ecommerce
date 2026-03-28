@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, X, Upload, Trash2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, Add02Icon, Cancel01Icon, Upload02Icon, Trash } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,7 +126,7 @@ export default function AddProduct() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate("/products")}>
-          <ArrowLeft />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
         </Button>
         <div>
           <h1 className="text-xl font-semibold">Add Product</h1>
@@ -424,14 +425,14 @@ export default function AddProduct() {
                         className="col-span-2 size-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleRemoveVariant(variant.id)}
                       >
-                        <Trash2 />
+                        <HugeiconsIcon icon={Trash} size={14} />
                       </Button>
                     </div>
                   ))}
                 </div>
               )}
               <Button variant="outline" size="sm" onClick={handleAddVariant}>
-                <Plus /> Add Variant
+                <HugeiconsIcon icon={Add02Icon} size={14} /> Add Variant
               </Button>
             </CardContent>
           </Card>
@@ -458,7 +459,7 @@ export default function AddProduct() {
                       className="absolute right-1 top-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={() => handleRemoveImage(i)}
                     >
-                      <X className="size-3" />
+                      <HugeiconsIcon icon={Cancel01Icon} size={12} />
                     </Button>
                   </div>
                 ))}
@@ -466,7 +467,7 @@ export default function AddProduct() {
                   onClick={handleAddImage}
                   className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                 >
-                  <Upload className="size-5" />
+                  <HugeiconsIcon icon={Upload02Icon} size={20} />
                   <span className="text-xs font-medium">Upload</span>
                 </button>
               </div>
@@ -485,7 +486,7 @@ export default function AddProduct() {
                   <Badge key={tag} variant="secondary" className="gap-1">
                     {tag}
                     <button onClick={() => handleRemoveTag(tag)}>
-                      <X className="size-3" />
+                      <HugeiconsIcon icon={Cancel01Icon} size={10} />
                     </button>
                   </Badge>
                 ))}
@@ -499,7 +500,7 @@ export default function AddProduct() {
                   className="h-8 max-w-xs"
                 />
                 <Button variant="outline" size="sm" onClick={handleAddTag}>
-                  <Plus /> Add
+                  <HugeiconsIcon icon={Add02Icon} size={14} /> Add
                 </Button>
               </div>
             </CardContent>

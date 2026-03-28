@@ -14,7 +14,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { MoreHorizontalIcon, FolderIcon, ArrowRightIcon, Trash2Icon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MoreHorizontalIcon, FolderIcon, ArrowRight02Icon, Trash } from "@hugeicons/core-free-icons";
 
 export function NavProjects({
   projects,
@@ -45,8 +46,7 @@ export function NavProjects({
                   />
                 }
               >
-                <MoreHorizontalIcon
-                />
+                <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                 <span className="sr-only">More</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -55,16 +55,16 @@ export function NavProjects({
                 align={isMobile ? "end" : "start"}
               >
                 <DropdownMenuItem>
-                  <FolderIcon className="text-muted-foreground" />
+                  <HugeiconsIcon icon={FolderIcon} size={16} className="text-muted-foreground" />
                   <span>View Project</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <ArrowRightIcon className="text-muted-foreground" />
+                  <HugeiconsIcon icon={ArrowRight02Icon} size={16} className="text-muted-foreground" />
                   <span>Share Project</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Trash2Icon className="text-muted-foreground" />
+                  <HugeiconsIcon icon={Trash} size={16} className="text-muted-foreground" />
                   <span>Delete Project</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -73,7 +73,7 @@ export function NavProjects({
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontalIcon className="text-sidebar-foreground/70" />
+            <HugeiconsIcon icon={MoreHorizontalIcon} size={16} className="text-sidebar-foreground/70" />
             <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

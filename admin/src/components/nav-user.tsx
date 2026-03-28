@@ -20,7 +20,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MoreVerticalIcon, SparklesIcon, BadgeCheck, CreditCard, Bell, Logout01Icon } from "@hugeicons/core-free-icons";
 
 export function NavUser({
   user,
@@ -49,7 +50,7 @@ export function NavUser({
               <span className="truncate font-medium">{user.name}</span>
               <span className="truncate text-xs">{user.email}</span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4" />
+            <HugeiconsIcon icon={MoreVerticalIcon} className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="min-w-56 rounded-lg"
@@ -74,33 +75,28 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <SparklesIcon
-                />
+                <HugeiconsIcon icon={SparklesIcon} size={18} color="currentColor" />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheckIcon
-                />
+                <HugeiconsIcon icon={BadgeCheck} size={18} color="currentColor" />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <CreditCardIcon
-                />
+                <HugeiconsIcon icon={CreditCard} size={18} color="currentColor" />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <BellIcon
-                />
+                <HugeiconsIcon icon={Bell} size={18} color="currentColor" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOutIcon
-              />
+              <HugeiconsIcon icon={Logout01Icon} size={18} color="currentColor" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

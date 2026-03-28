@@ -1,16 +1,17 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  LayoutDashboard,
-  Package,
-  FolderTree,
-  ShoppingCart,
-  Users,
-  UserCog,
-  Settings,
-  ChevronsUpDownIcon,
-  LogOutIcon,
-} from "lucide-react";
+  DashboardBrowsingIcon,
+  Package01Icon,
+  FolderIcon,
+  ShoppingBag01Icon,
+  UserIcon,
+  UserSettings01Icon,
+  Settings01Icon,
+  MoreVerticalIcon,
+  Logout01Icon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
   AvatarFallback,
@@ -41,14 +42,14 @@ import {
 
 import type { Role } from "@/lib/types";
 
-const NAV_ITEMS: { title: string; url: string; icon: React.ElementType; roles: Role[] }[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["super_admin", "product_manager"] },
-  { title: "Products", url: "/products", icon: Package, roles: ["super_admin", "product_manager"] },
-  { title: "Categories", url: "/categories", icon: FolderTree, roles: ["super_admin", "product_manager"] },
-  { title: "Orders", url: "/orders", icon: ShoppingCart, roles: ["super_admin"] },
-  { title: "Customers", url: "/customers", icon: Users, roles: ["super_admin"] },
-  { title: "Team", url: "/team", icon: UserCog, roles: ["super_admin"] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["super_admin"] },
+const NAV_ITEMS: { title: string; url: string; icon: typeof DashboardBrowsingIcon; roles: Role[] }[] = [
+  { title: "Dashboard", url: "/", icon: DashboardBrowsingIcon, roles: ["super_admin", "product_manager"] },
+  { title: "Products", url: "/products", icon: Package01Icon, roles: ["super_admin", "product_manager"] },
+  { title: "Categories", url: "/categories", icon: FolderIcon, roles: ["super_admin", "product_manager"] },
+  { title: "Orders", url: "/orders", icon: ShoppingBag01Icon, roles: ["super_admin"] },
+  { title: "Customers", url: "/customers", icon: UserIcon, roles: ["super_admin"] },
+  { title: "Team", url: "/team", icon: UserSettings01Icon, roles: ["super_admin"] },
+  { title: "Settings", url: "/settings", icon: Settings01Icon, roles: ["super_admin"] },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -93,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     isActive={isActive}
                     render={<NavLink to={item.url} />}
                   >
-                    <Icon />
+                    <HugeiconsIcon icon={Icon} size={20} color="currentColor" />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -124,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {user?.role === "super_admin" ? "Super Admin" : "Product Manager"}
                   </span>
                 </div>
-                <ChevronsUpDownIcon className="ml-auto size-4" />
+                <HugeiconsIcon icon={MoreVerticalIcon} className="ml-auto size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
@@ -153,7 +154,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} variant="destructive">
-                  <LogOutIcon />
+                  <HugeiconsIcon icon={Logout01Icon} size={18} color="currentColor" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
