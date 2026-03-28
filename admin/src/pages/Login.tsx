@@ -30,6 +30,7 @@ export default function Login() {
           </h1>
           <p className="mt-1 text-sm text-white/40">Admin Panel</p>
         </div>
+        
 
         {/* Form */}
         <form
