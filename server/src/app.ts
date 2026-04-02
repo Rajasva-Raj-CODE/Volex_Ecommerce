@@ -9,11 +9,12 @@ import { errorMiddleware } from "./middleware/error.middleware";
 // ─── Route imports (added as each module is built) ───────────────────────────
 import authRoutes from "./modules/auth/auth.routes";
 import invitationRoutes from "./modules/invitations/invitations.routes";
-// import productRoutes from "./modules/products/products.routes";
-// import categoryRoutes from "./modules/categories/categories.routes";
-// import cartRoutes from "./modules/cart/cart.routes";
-// import wishlistRoutes from "./modules/wishlist/wishlist.routes";
-// import orderRoutes from "./modules/orders/orders.routes";
+import productRoutes from "./modules/products/products.routes";
+import categoryRoutes from "./modules/categories/categories.routes";
+import cartRoutes from "./modules/cart/cart.routes";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes";
+import orderRoutes from "./modules/orders/orders.routes";
+import addressRoutes from "./modules/addresses/addresses.routes";
 
 const app = express();
 
@@ -48,11 +49,12 @@ app.get("/health", (_req, res) => {
 // ─── API routes (uncomment as each module is built) ──────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/invitations", invitationRoutes);
-// app.use("/api/products", productRoutes);
-// app.use("/api/categories", categoryRoutes);
-// app.use("/api/cart", cartRoutes);
-// app.use("/api/wishlist", wishlistRoutes);
-// app.use("/api/orders", orderRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/addresses", addressRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

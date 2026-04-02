@@ -51,36 +51,38 @@
 - [x] POST /api/invitations/auth/verify-otp (staff enters OTP → JWT tokens)
 
 ### Products API
-- [ ] GET /api/products (list + filter + search + paginate) · `server/src/modules/products/`
-- [ ] GET /api/products/:id
-- [ ] POST /api/products (ADMIN/STAFF only)
-- [ ] PUT /api/products/:id
-- [ ] DELETE /api/products/:id
+- [x] GET /api/products (list + search + filter by category/brand/price/stock + paginate) · `server/src/modules/products/`
+- [x] GET /api/products/:id (by id or slug)
+- [x] POST /api/products (ADMIN/STAFF — auto-generates slug)
+- [x] PUT /api/products/:id (partial update)
+- [x] DELETE /api/products/:id (ADMIN only)
 
 ### Categories API
-- [ ] GET /api/categories (tree) · `server/src/modules/categories/`
-- [ ] POST /api/categories
-- [ ] PUT /api/categories/:id
-- [ ] DELETE /api/categories/:id
+- [x] GET /api/categories (tree — 3 levels deep) · `server/src/modules/categories/`
+- [x] GET /api/categories/flat (flat list for dropdowns)
+- [x] GET /api/categories/:id
+- [x] POST /api/categories (ADMIN only — supports parent/child)
+- [x] PUT /api/categories/:id
+- [x] DELETE /api/categories/:id (blocked if has products or children)
 
 ### Cart API
-- [ ] GET /api/cart · `server/src/modules/cart/`
-- [ ] POST /api/cart/items
-- [ ] PUT /api/cart/items/:id
-- [ ] DELETE /api/cart/items/:id
-- [ ] DELETE /api/cart (clear)
+- [x] GET /api/cart (with subtotal + item count) · `server/src/modules/cart/`
+- [x] POST /api/cart (add item — upsert by productId)
+- [x] PUT /api/cart/:productId (update quantity)
+- [x] DELETE /api/cart/:productId (remove item)
+- [x] DELETE /api/cart/clear (clear entire cart)
 
 ### Wishlist API
-- [ ] GET /api/wishlist · `server/src/modules/wishlist/`
-- [ ] POST /api/wishlist
-- [ ] DELETE /api/wishlist/:productId
+- [x] GET /api/wishlist · `server/src/modules/wishlist/`
+- [x] POST /api/wishlist (add product)
+- [x] DELETE /api/wishlist/:productId
 
 ### Orders API
-- [ ] POST /api/orders (place order) · `server/src/modules/orders/`
-- [ ] GET /api/orders (user's orders)
-- [ ] GET /api/orders/:id
-- [ ] GET /api/admin/orders (all orders — admin/staff)
-- [ ] PUT /api/orders/:id/status (admin updates status)
+- [x] POST /api/orders (place order — validates stock, decrements stock, clears cart, runs in transaction) · `server/src/modules/orders/`
+- [x] GET /api/orders/my (user's own orders)
+- [x] GET /api/orders/:id (user sees own, admin/staff see any)
+- [x] GET /api/orders (all orders — admin/staff only, filterable by status/userId)
+- [x] PUT /api/orders/:id/status (admin/staff update status)
 
 ---
 
@@ -220,4 +222,4 @@
 
 ---
 
-*Last updated: Chunks 1–7 — Server foundation, DB schema, utils, email service, auth module, invitations + staff OTP module complete. TypeScript: 0 errors.*
+*Last updated: Chunks 1–13 — ALL server APIs complete. Cart, Wishlist, Orders done. TypeScript: 0 errors.*
