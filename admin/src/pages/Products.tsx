@@ -34,7 +34,7 @@ const MOCK_PRODUCTS = [
   { id: "10", name: "Samsung Galaxy S24+", category: "Phones", subcategory: "Samsung Galaxy", price: 99999, stock: 0, status: "Out of Stock" },
 ];
 
-const STATUS_STYLES: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className: string; icon?: typeof MoreVerticalIcon }> = {
+const STATUS_STYLES: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
   Active: { variant: "outline", className: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50" },
   "Low Stock": { variant: "secondary", className: "bg-amber-50 text-amber-700 hover:bg-amber-50" },
   "Out of Stock": { variant: "destructive", className: "bg-red-50 text-red-700 hover:bg-red-50" },
@@ -49,17 +49,21 @@ const CATEGORY_COLORS: Record<string, string> = {
   Wearables: "bg-green-100 text-green-700",
 };
 
+const STATUS_TABS = ["All", "Active", "Low Stock", "Out of Stock"];
+
 export default function Products() {
   const [search, setSearch] = useState("");
-
+  const [activeStatus, setActiveStatus] = useState("All");
   const navigate = useNavigate();
 
-  const filtered = MOCK_PRODUCTS.filter(
-    (p) =>
+  const filtered = MOCK_PRODUCTS.filter((p) => {
+    const matchesSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase()) ||
-      p.subcategory.toLowerCase().includes(search.toLowerCase())
-  );
+      p.subcategory.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = activeStatus === "All" || p.status === activeStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <>
@@ -91,6 +95,26 @@ export default function Products() {
         </div>
       </div>
 
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {STATUS_TABS.map((tab) => {
+          const count = tab === "All" ? MOCK_PRODUCTS.length : MOCK_PRODUCTS.filter((p) => p.status === tab).length;
+          return (
+            <Button
+              key={tab}
+              variant={activeStatus === tab ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveStatus(tab)}
+              className="h-8 gap-1.5 text-xs"
+            >
+              {tab}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
+                {count}
+              </span>
+            </Button>
+          );
+        })}
+      </div>
+
       <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
@@ -115,7 +139,7 @@ export default function Products() {
               </TableHead>
               <TableHead className="text-right font-semibold">
                 <div className="flex items-center justify-end gap-2">
-                  <HugeiconsIcon icon={DeliveryDelay02Icon}  size={14} className="text-blue-600 hidden sm:flex" />
+                  <HugeiconsIcon icon={DeliveryDelay02Icon} size={14} className="text-blue-600 hidden sm:flex" />
                   <span>Stock</span>
                 </div>
               </TableHead>
@@ -129,60 +153,68 @@ export default function Products() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((product) => (
-              <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell>
-                  <span className="font-medium">{product.name}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${CATEGORY_COLORS[product.category] || "bg-gray-100 text-gray-700"} text-[10px] font-medium border-0`}>
-                      {product.category}
-                    </Badge>
-                    <HugeiconsIcon icon={MoreVerticalIcon} size={10} className="text-muted-foreground rotate-90" />
-                    <span className="text-xs text-muted-foreground">{product.subcategory}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right tabular-nums font-medium">₹{product.price.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-right">
-                  <span className={`tabular-nums ${product.stock === 0 ? "text-red-600 font-medium" : product.stock < 10 ? "text-amber-600" : "text-muted-foreground"}`}>
-                    {product.stock}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge className={STATUS_STYLES[product.status]?.className || ""} variant={STATUS_STYLES[product.status]?.variant || "secondary"}>
-                    {product.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button variant="ghost" className="size-8 text-muted-foreground data-open:bg-muted" size="icon" />
-                      }
-                    >
-                      <HugeiconsIcon icon={MoreVerticalIcon} size={16} />
-                      <span className="sr-only">Open menu</span>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => navigate(`/products/edit/${product.id}`)} className="gap-2">
-                        <HugeiconsIcon icon={Edit02Icon} size={14} />
-                        Edit Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2">
-                        <HugeiconsIcon icon={Copy01Icon} size={14} />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" className="gap-2">
-                        <HugeiconsIcon icon={Trash} size={14} />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  No products found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filtered.map((product) => (
+                <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell>
+                    <span className="font-medium">{product.name}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${CATEGORY_COLORS[product.category] || "bg-gray-100 text-gray-700"} text-[10px] font-medium border-0`}>
+                        {product.category}
+                      </Badge>
+                      <HugeiconsIcon icon={MoreVerticalIcon} size={10} className="text-muted-foreground rotate-90" />
+                      <span className="text-xs text-muted-foreground">{product.subcategory}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">₹{product.price.toLocaleString("en-IN")}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={`tabular-nums ${product.stock === 0 ? "text-red-600 font-medium" : product.stock < 10 ? "text-amber-600" : "text-muted-foreground"}`}>
+                      {product.stock}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={STATUS_STYLES[product.status]?.className || ""} variant={STATUS_STYLES[product.status]?.variant || "secondary"}>
+                      {product.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" className="size-8 text-muted-foreground data-open:bg-muted" size="icon" />
+                        }
+                      >
+                        <HugeiconsIcon icon={MoreVerticalIcon} size={16} />
+                        <span className="sr-only">Open menu</span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => navigate(`/products/edit/${product.id}`)} className="gap-2">
+                          <HugeiconsIcon icon={Edit02Icon} size={14} />
+                          Edit Product
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="gap-2">
+                          <HugeiconsIcon icon={Copy01Icon} size={14} />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" className="gap-2">
+                          <HugeiconsIcon icon={Trash} size={14} />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

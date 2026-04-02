@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Search02Icon, UserGroupIcon, Mail02Icon, Location01Icon, UserIcon, Calendar02Icon, ArrowDown01Icon, HashtagIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
@@ -34,7 +36,22 @@ const GENDER_COLORS: Record<string, string> = {
   Female: "bg-pink-100 text-pink-700",
 };
 
+const STATUS_TABS = ["All", "Active", "VIP", "Inactive"];
+
 export default function Customers() {
+  const [search, setSearch] = useState("");
+  const [activeStatus, setActiveStatus] = useState("All");
+
+  const filtered = MOCK_CUSTOMERS.filter((c) => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.email.toLowerCase().includes(search.toLowerCase()) ||
+      c.location.toLowerCase().includes(search.toLowerCase()) ||
+      c.id.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = activeStatus === "All" || c.status === activeStatus;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -44,7 +61,7 @@ export default function Customers() {
           </div>
           <div>
             <h1 className="text-xl font-semibold">Customers</h1>
-            <p className="text-sm text-muted-foreground">{MOCK_CUSTOMERS.length} customers</p>
+            <p className="text-sm text-muted-foreground">{filtered.length} of {MOCK_CUSTOMERS.length} customers</p>
           </div>
         </div>
       </div>
@@ -52,8 +69,33 @@ export default function Customers() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <HugeiconsIcon icon={Search02Icon} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search customers..." className="pl-9 h-9" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customers, location..."
+            className="pl-9 h-9"
+          />
         </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {STATUS_TABS.map((tab) => {
+          const count = tab === "All" ? MOCK_CUSTOMERS.length : MOCK_CUSTOMERS.filter((c) => c.status === tab).length;
+          return (
+            <Button
+              key={tab}
+              variant={activeStatus === tab ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveStatus(tab)}
+              className="h-8 gap-1.5 text-xs"
+            >
+              {tab}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
+                {count}
+              </span>
+            </Button>
+          );
+        })}
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -105,54 +147,62 @@ export default function Customers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_CUSTOMERS.map((customer) => (
-              <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-xs font-medium">
-                        {customer.name.split(" ").map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{customer.name}</p>
-                      <p className="text-xs text-muted-foreground">ID: {customer.id}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                      <HugeiconsIcon icon={Mail02Icon} size={12} />
-                      {customer.email}
-                    </p>
-                    <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                      <HugeiconsIcon icon={Location01Icon} size={12} />
-                      {customer.phone}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <HugeiconsIcon icon={Location01Icon} size={14} />
-                    {customer.location}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right tabular-nums font-medium">{customer.orders}</TableCell>
-                <TableCell className="text-right tabular-nums font-medium">₹{customer.totalSpend.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-muted-foreground">{customer.joined}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${GENDER_COLORS[customer.gender] || "bg-gray-100 text-gray-700"} text-[10px] font-medium border-0`}>
-                      {customer.gender}
-                    </Badge>
-                    <Badge className={`${STATUS_STYLES[customer.status]?.bg} ${STATUS_STYLES[customer.status]?.text} text-[10px] font-medium border-0`}>
-                      {customer.status}
-                    </Badge>
-                  </div>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  No customers found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filtered.map((customer) => (
+                <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-xs font-medium">
+                          {customer.name.split(" ").map((n) => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{customer.name}</p>
+                        <p className="text-xs text-muted-foreground">ID: {customer.id}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                        <HugeiconsIcon icon={Mail02Icon} size={12} />
+                        {customer.email}
+                      </p>
+                      <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                        <HugeiconsIcon icon={Location01Icon} size={12} />
+                        {customer.phone}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <HugeiconsIcon icon={Location01Icon} size={14} />
+                      {customer.location}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">{customer.orders}</TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">₹{customer.totalSpend.toLocaleString("en-IN")}</TableCell>
+                  <TableCell className="text-muted-foreground">{customer.joined}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${GENDER_COLORS[customer.gender] || "bg-gray-100 text-gray-700"} text-[10px] font-medium border-0`}>
+                        {customer.gender}
+                      </Badge>
+                      <Badge className={`${STATUS_STYLES[customer.status]?.bg} ${STATUS_STYLES[customer.status]?.text} text-[10px] font-medium border-0`}>
+                        {customer.status}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
