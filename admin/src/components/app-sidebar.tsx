@@ -41,15 +41,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import type { Role } from "@/lib/types";
+import { getRoleLabel } from "@/lib/roles";
 
 const NAV_ITEMS: { title: string; url: string; icon: typeof DashboardBrowsingIcon; roles: Role[] }[] = [
-  { title: "Dashboard", url: "/", icon: DashboardBrowsingIcon, roles: ["super_admin", "product_manager"] },
-  { title: "Products", url: "/products", icon: Package01Icon, roles: ["super_admin", "product_manager"] },
-  { title: "Categories", url: "/categories", icon: FolderIcon, roles: ["super_admin", "product_manager"] },
-  { title: "Orders", url: "/orders", icon: ShoppingBag01Icon, roles: ["super_admin"] },
-  { title: "Customers", url: "/customers", icon: UserIcon, roles: ["super_admin"] },
-  { title: "Team", url: "/team", icon: UserSettings01Icon, roles: ["super_admin"] },
-  { title: "Settings", url: "/settings", icon: Settings01Icon, roles: ["super_admin"] },
+  { title: "Dashboard", url: "/", icon: DashboardBrowsingIcon, roles: ["ADMIN", "STAFF"] },
+  { title: "Products", url: "/products", icon: Package01Icon, roles: ["ADMIN", "STAFF"] },
+  { title: "Categories", url: "/categories", icon: FolderIcon, roles: ["ADMIN", "STAFF"] },
+  { title: "Orders", url: "/orders", icon: ShoppingBag01Icon, roles: ["ADMIN"] },
+  { title: "Customers", url: "/customers", icon: UserIcon, roles: ["ADMIN"] },
+  { title: "Team", url: "/team", icon: UserSettings01Icon, roles: ["ADMIN"] },
+  { title: "Settings", url: "/settings", icon: Settings01Icon, roles: ["ADMIN"] },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -117,15 +118,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 }
               >
                 <Avatar className="size-8">
-                  <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user?.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user?.role === "super_admin" ? "Super Admin" : "Product Manager"}
-                  </span>
-                </div>
-                <HugeiconsIcon icon={MoreVerticalIcon} className="ml-auto size-4" />
+                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-medium">{user?.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {user ? getRoleLabel(user.role) : "Unknown"}
+                        </span>
+                      </div>
+                      <HugeiconsIcon icon={MoreVerticalIcon} className="ml-auto size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
@@ -151,7 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <Badge variant="secondary" className="mx-2 mb-1">
-                    {user?.role === "super_admin" ? "Super Admin" : "Product Manager"}
+                    {user ? getRoleLabel(user.role) : "Unknown"}
                   </Badge>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

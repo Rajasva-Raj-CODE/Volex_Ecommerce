@@ -10,8 +10,11 @@ import {
   Mail01Icon,
   LockPasswordIcon,
   ArrowRight01Icon,
+  SmartPhone01Icon,
 } from "@hugeicons/core-free-icons";
 import { ZapIcon } from "lucide-react";
+import { requestOtp, verifyOtp } from "@/lib/invitations-api";
+import { ApiError, setStoredAuthTokens } from "@/lib/api";
 
 const METRICS = [
   { value: "₹12.4L", label: "Revenue",   sub: "+12.5% this month" },
@@ -19,23 +22,67 @@ const METRICS = [
   { value: "3,421",  label: "Customers", sub: "+15.3% this month" },
 ];
 
+type LoginTab = "admin" | "staff";
+type OtpStep = "email" | "otp";
+
 export default function Login() {
+  const [tab, setTab] = useState<LoginTab>("admin");
+  const navigate   = useNavigate();
+  const { login, isLoggingIn, refreshSession } = useAuth();
+
+  // Admin form
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd]   = useState(false);
-  const [error, setError]       = useState("");
-  const { login }  = useAuth();
-  const navigate   = useNavigate();
+  const [adminError, setAdminError] = useState("");
 
-  const submit = (e: FormEvent) => {
+  // Staff OTP form
+  const [staffEmail, setStaffEmail]   = useState("");
+  const [otp, setOtp]                 = useState("");
+  const [otpStep, setOtpStep]         = useState<OtpStep>("email");
+  const [staffError, setStaffError]   = useState("");
+  const [sendingOtp, setSendingOtp]   = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  const submitAdmin = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
-    if (!login(email, password)) setError("Wrong email or password.");
-    else navigate("/", { replace: true });
+    setAdminError("");
+    try {
+      await login(email, password);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : "Unable to sign in.");
+    }
   };
 
-  const quickFill = (e: string, p: string) => {
-    setEmail(e); setPassword(p); setError("");
+  const submitRequestOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    setStaffError("");
+    setSendingOtp(true);
+    try {
+      await requestOtp(staffEmail);
+      setOtpStep("otp");
+    } catch (err) {
+      setStaffError(err instanceof ApiError ? err.message : "Failed to send OTP.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const submitVerifyOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    setStaffError("");
+    setVerifyingOtp(true);
+    try {
+      const result = await verifyOtp(staffEmail, otp);
+      setStoredAuthTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+      await refreshSession();
+      navigate("/", { replace: true });
+    } catch (err) {
+      setStaffError(err instanceof ApiError ? err.message : "Invalid OTP.");
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   return (
@@ -45,7 +92,6 @@ export default function Login() {
       <div className="relative hidden lg:flex lg:w-[52%] flex-col justify-between overflow-hidden px-16 py-14"
         style={{ backgroundColor: "oklch(0.185 0.065 175)" }}>
 
-        {/* big tinted "V" watermark */}
         <div
           className="pointer-events-none absolute -bottom-10 -left-8 select-none font-black leading-none text-white"
           style={{ fontSize: "clamp(260px,28vw,400px)", opacity: 0.04, letterSpacing: "-0.05em" }}
@@ -54,7 +100,6 @@ export default function Login() {
           V
         </div>
 
-        {/* top logo */}
         <div className="relative flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl"
             style={{ backgroundColor: "oklch(0.685 0.135 175)" }}>
@@ -63,7 +108,6 @@ export default function Login() {
           <span className="text-base font-bold tracking-tight text-white">VolteX</span>
         </div>
 
-        {/* metrics — no cards, just numbers */}
         <div className="relative space-y-10">
           {METRICS.map((m, i) => (
             <div key={i}>
@@ -83,7 +127,6 @@ export default function Login() {
           ))}
         </div>
 
-        {/* tagline */}
         <div className="relative">
           <p className="text-2xl font-bold leading-snug text-white">
             Your store.<br />
@@ -106,82 +149,149 @@ export default function Login() {
           <span className="text-sm font-bold text-white">VolteX</span>
         </div>
 
-        {/* form */}
         <div className="mx-auto w-full max-w-[360px]">
 
           <div className="mb-8 space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-white">Sign in</h1>
-            <p className="text-sm text-white/40">Enter your credentials to access the dashboard</p>
+            <p className="text-sm text-white/40">Access your VolteX admin dashboard</p>
           </div>
 
-          <form onSubmit={submit} className="space-y-4">
-            {error && (
-              <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">
-                {error}
-              </p>
-            )}
-
-            <div className="space-y-1">
-              <label htmlFor="email" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
-                Email
-              </label>
-              <div className="relative">
-                <HugeiconsIcon icon={Mail01Icon} size={14}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                <Input id="email" type="email" value={email} required
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@voltex.com"
-                  className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:bg-white/6"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="password" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
-                Password
-              </label>
-              <div className="relative">
-                <HugeiconsIcon icon={LockPasswordIcon} size={14}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                <Input id="password" type={showPwd ? "text" : "password"} value={password} required
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 pr-10 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:bg-white/6"
-                />
-                <button type="button" onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                  <HugeiconsIcon icon={showPwd ? ViewOffIcon : ViewIcon} size={14} />
-                </button>
-              </div>
-            </div>
-
-            <Button type="submit"
-              className="h-11 w-full rounded-xl font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-              Continue
-              <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
-            </Button>
-          </form>
-
-          {/* quick fill */}
-          <div className="mt-8 space-y-3">
-            <p className="text-[11px] uppercase tracking-widest text-white/20">Demo accounts</p>
-            <div className="space-y-2">
-              {[
-                { role: "Super Admin", email: "admin@voltex.com", pwd: "admin123" },
-                { role: "Product Manager", email: "pm@voltex.com", pwd: "pm123" },
-              ].map(acc => (
-                <button key={acc.role} type="button"
-                  onClick={() => quickFill(acc.email, acc.pwd)}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/6 px-4 py-3 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 group">
-                  <div>
-                    <p className="text-xs font-semibold text-white/60 group-hover:text-white/80 transition-colors">{acc.role}</p>
-                    <p className="text-[11px] text-white/25 mt-0.5">{acc.email}</p>
-                  </div>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} className="text-white/15 group-hover:text-primary/60 transition-colors" />
-                </button>
-              ))}
-            </div>
+          {/* Tab switcher */}
+          <div className="mb-6 flex rounded-xl border border-white/8 bg-white/4 p-1">
+            <button
+              type="button"
+              onClick={() => { setTab("admin"); setAdminError(""); }}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${tab === "admin" ? "bg-primary text-primary-foreground" : "text-white/40 hover:text-white/60"}`}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab("staff"); setStaffError(""); setOtpStep("email"); setOtp(""); }}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${tab === "staff" ? "bg-primary text-primary-foreground" : "text-white/40 hover:text-white/60"}`}
+            >
+              Staff (OTP)
+            </button>
           </div>
+
+          {/* Admin login form */}
+          {tab === "admin" && (
+            <form onSubmit={submitAdmin} className="space-y-4">
+              {adminError && (
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">
+                  {adminError}
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <label htmlFor="email" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
+                  Email
+                </label>
+                <div className="relative">
+                  <HugeiconsIcon icon={Mail01Icon} size={14}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Input id="email" type="email" value={email} required
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="admin@voltex.com"
+                    className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:bg-white/6"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="password" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
+                  Password
+                </label>
+                <div className="relative">
+                  <HugeiconsIcon icon={LockPasswordIcon} size={14}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Input id="password" type={showPwd ? "text" : "password"} value={password} required
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 pr-10 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:bg-white/6"
+                  />
+                  <button type="button" onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
+                    <HugeiconsIcon icon={showPwd ? ViewOffIcon : ViewIcon} size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <Button type="submit"
+                disabled={isLoggingIn}
+                className="h-11 w-full rounded-xl font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                {isLoggingIn ? "Signing in…" : "Continue"}
+                <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
+              </Button>
+            </form>
+          )}
+
+          {/* Staff OTP form */}
+          {tab === "staff" && otpStep === "email" && (
+            <form onSubmit={submitRequestOtp} className="space-y-4">
+              {staffError && (
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">
+                  {staffError}
+                </p>
+              )}
+              <div className="space-y-1">
+                <label htmlFor="staff-email" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
+                  Email
+                </label>
+                <div className="relative">
+                  <HugeiconsIcon icon={Mail01Icon} size={14}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Input id="staff-email" type="email" value={staffEmail} required
+                    onChange={e => setStaffEmail(e.target.value)}
+                    placeholder="staff@voltex.com"
+                    className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:bg-white/6"
+                  />
+                </div>
+              </div>
+              <Button type="submit" disabled={sendingOtp}
+                className="h-11 w-full rounded-xl font-semibold gap-2 bg-primary text-primary-foreground">
+                {sendingOtp ? "Sending OTP…" : "Send OTP"}
+                <HugeiconsIcon icon={SmartPhone01Icon} size={15} />
+              </Button>
+            </form>
+          )}
+
+          {tab === "staff" && otpStep === "otp" && (
+            <form onSubmit={submitVerifyOtp} className="space-y-4">
+              <div className="rounded-xl border border-white/8 bg-white/4 px-4 py-3">
+                <p className="text-xs text-white/50">OTP sent to <span className="text-white/80">{staffEmail}</span></p>
+              </div>
+
+              {staffError && (
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">
+                  {staffError}
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <label htmlFor="otp" className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">
+                  6-digit OTP
+                </label>
+                <Input id="otp" type="text" inputMode="numeric" maxLength={6} value={otp} required
+                  onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  className="h-11 rounded-xl border-white/8 bg-white/4 text-center text-xl tracking-[0.5em] font-bold text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0"
+                />
+              </div>
+
+              <Button type="submit" disabled={verifyingOtp || otp.length < 6}
+                className="h-11 w-full rounded-xl font-semibold gap-2 bg-primary text-primary-foreground">
+                {verifyingOtp ? "Verifying…" : "Verify OTP"}
+                <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
+              </Button>
+
+              <button type="button"
+                onClick={() => { setOtpStep("email"); setOtp(""); setStaffError(""); }}
+                className="w-full text-center text-xs text-white/30 hover:text-white/50 transition-colors">
+                ← Use a different email
+              </button>
+            </form>
+          )}
         </div>
 
         <p className="text-[11px] text-white/15">© 2026 VolteX</p>

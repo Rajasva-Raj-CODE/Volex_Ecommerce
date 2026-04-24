@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { prisma } from "../../config/prisma";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt";
 import { AppError } from "../../middleware/error.middleware";
-import type { AdminLoginInput } from "./auth.schema";
+import type { AdminLoginInput, CustomerRegisterInput, CustomerLoginInput } from "./auth.schema";
 
 const REFRESH_TOKEN_EXPIRES_DAYS = 7;
 
@@ -72,9 +72,53 @@ export async function getMe(userId: string) {
   return user;
 }
 
+// ─── Customer Register ────────────────────────────────────────────────────────
+
+export async function customerRegister(input: CustomerRegisterInput) {
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
+  if (existing) {
+    throw new AppError("Email already in use", 409);
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  const user = await prisma.user.create({
+    data: {
+      email: input.email,
+      name: input.name ?? null,
+      passwordHash,
+      role: "CUSTOMER",
+    },
+  });
+
+  return issueTokens(user.id, "CUSTOMER");
+}
+
+// ─── Customer Login ───────────────────────────────────────────────────────────
+
+export async function customerLogin(input: CustomerLoginInput) {
+  const user = await prisma.user.findUnique({ where: { email: input.email } });
+
+  if (!user || user.role !== "CUSTOMER") {
+    throw new AppError("Invalid email or password", 401);
+  }
+  if (!user.isActive) {
+    throw new AppError("Account is disabled", 403);
+  }
+  if (!user.passwordHash) {
+    throw new AppError("Invalid email or password", 401);
+  }
+
+  const passwordOk = await bcrypt.compare(input.password, user.passwordHash);
+  if (!passwordOk) {
+    throw new AppError("Invalid email or password", 401);
+  }
+
+  return issueTokens(user.id, "CUSTOMER");
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function issueTokens(userId: string, role: "ADMIN" | "STAFF") {
+async function issueTokens(userId: string, role: "ADMIN" | "STAFF" | "CUSTOMER") {
   const accessToken = signAccessToken({ userId, role });
   const refreshToken = signRefreshToken({ userId, role });
 

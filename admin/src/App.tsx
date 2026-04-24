@@ -24,7 +24,7 @@ export default function App() {
           <Route path="products/add" element={<AddProduct />} />
           <Route path="products/edit/:id" element={<EditProduct />} />
           <Route path="categories" element={<Categories />} />
-          <Route element={<RequireRole allowed={["super_admin"]} />}>
+          <Route element={<RequireRole allowed={["ADMIN"]} />}>
             <Route path="orders" element={<Orders />} />
             <Route path="customers" element={<Customers />} />
             <Route path="team" element={<Team />} />

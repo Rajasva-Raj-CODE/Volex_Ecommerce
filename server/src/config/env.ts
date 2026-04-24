@@ -15,14 +15,14 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
-  EMAIL_FROM: z.string().default("VolteX <noreply@voltex.com>"),
+  EMAIL_FROM: z.string().default("VolteX <onboarding@resend.dev>"),
 
   ADMIN_SEED_EMAIL: z.string().email().default("admin@voltex.com"),
   ADMIN_SEED_PASSWORD: z.string().min(8).default("admin_change_me_123!"),
   ADMIN_SEED_NAME: z.string().default("Admin"),
 
   CLIENT_URL: z.string().default("http://localhost:3000"),
-  ADMIN_URL: z.string().default("http://localhost:5173"),
+  ADMIN_URL: z.string().default("http://localhost:3002"),
 });
 
 const parsed = envSchema.safeParse(process.env);

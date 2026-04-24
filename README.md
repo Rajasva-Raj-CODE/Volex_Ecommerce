@@ -75,7 +75,7 @@ npm run dev
 cd admin
 npm install
 npm run dev
-# http://localhost:5173
+# http://localhost:3002
 ```
 
 ### Run Server (when ready)

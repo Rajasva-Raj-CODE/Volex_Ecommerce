@@ -66,8 +66,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
-  const stats = isSuperAdmin ? SUPER_ADMIN_STATS : PM_STATS;
+  const isAdmin = user?.role === "ADMIN";
+  const stats = isAdmin ? SUPER_ADMIN_STATS : PM_STATS;
 
   return (
     <>
@@ -113,10 +113,10 @@ export default function Dashboard() {
       </div>
 
       {/* Chart */}
-      {isSuperAdmin && <ChartAreaInteractive />}
+      {isAdmin && <ChartAreaInteractive />}
 
       {/* Recent Orders Table */}
-      {isSuperAdmin && (
+      {isAdmin && (
         <div className="overflow-hidden rounded-lg border bg-card">
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">

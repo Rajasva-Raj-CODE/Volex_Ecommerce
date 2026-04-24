@@ -1,0 +1,110 @@
+import { z } from "zod";
+export declare const createProductSchema: z.ZodObject<{
+    name: z.ZodString;
+    slug: z.ZodOptional<z.ZodString>;
+    description: z.ZodOptional<z.ZodString>;
+    price: z.ZodNumber;
+    mrp: z.ZodOptional<z.ZodNumber>;
+    stock: z.ZodDefault<z.ZodNumber>;
+    images: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    brand: z.ZodOptional<z.ZodString>;
+    categoryId: z.ZodString;
+    isActive: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    name: string;
+    isActive: boolean;
+    price: number;
+    stock: number;
+    images: string[];
+    categoryId: string;
+    slug?: string | undefined;
+    description?: string | undefined;
+    mrp?: number | undefined;
+    brand?: string | undefined;
+}, {
+    name: string;
+    price: number;
+    categoryId: string;
+    isActive?: boolean | undefined;
+    slug?: string | undefined;
+    description?: string | undefined;
+    mrp?: number | undefined;
+    stock?: number | undefined;
+    images?: string[] | undefined;
+    brand?: string | undefined;
+}>;
+export declare const updateProductSchema: z.ZodObject<{
+    name: z.ZodOptional<z.ZodString>;
+    slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    price: z.ZodOptional<z.ZodNumber>;
+    mrp: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    stock: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
+    images: z.ZodOptional<z.ZodDefault<z.ZodArray<z.ZodString, "many">>>;
+    brand: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    categoryId: z.ZodOptional<z.ZodString>;
+    isActive: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+}, "strip", z.ZodTypeAny, {
+    name?: string | undefined;
+    isActive?: boolean | undefined;
+    slug?: string | undefined;
+    description?: string | undefined;
+    price?: number | undefined;
+    mrp?: number | undefined;
+    stock?: number | undefined;
+    images?: string[] | undefined;
+    brand?: string | undefined;
+    categoryId?: string | undefined;
+}, {
+    name?: string | undefined;
+    isActive?: boolean | undefined;
+    slug?: string | undefined;
+    description?: string | undefined;
+    price?: number | undefined;
+    mrp?: number | undefined;
+    stock?: number | undefined;
+    images?: string[] | undefined;
+    brand?: string | undefined;
+    categoryId?: string | undefined;
+}>;
+export declare const productQuerySchema: z.ZodObject<{
+    page: z.ZodDefault<z.ZodNumber>;
+    limit: z.ZodDefault<z.ZodNumber>;
+    search: z.ZodOptional<z.ZodString>;
+    categoryId: z.ZodOptional<z.ZodString>;
+    brand: z.ZodOptional<z.ZodString>;
+    minPrice: z.ZodOptional<z.ZodNumber>;
+    maxPrice: z.ZodOptional<z.ZodNumber>;
+    inStock: z.ZodOptional<z.ZodBoolean>;
+    isActive: z.ZodOptional<z.ZodBoolean>;
+    sortBy: z.ZodDefault<z.ZodEnum<["price", "name", "createdAt", "stock"]>>;
+    sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+    page: number;
+    sortBy: "name" | "createdAt" | "price" | "stock";
+    sortOrder: "asc" | "desc";
+    search?: string | undefined;
+    isActive?: boolean | undefined;
+    brand?: string | undefined;
+    categoryId?: string | undefined;
+    minPrice?: number | undefined;
+    maxPrice?: number | undefined;
+    inStock?: boolean | undefined;
+}, {
+    limit?: number | undefined;
+    search?: string | undefined;
+    isActive?: boolean | undefined;
+    brand?: string | undefined;
+    categoryId?: string | undefined;
+    page?: number | undefined;
+    minPrice?: number | undefined;
+    maxPrice?: number | undefined;
+    inStock?: boolean | undefined;
+    sortBy?: "name" | "createdAt" | "price" | "stock" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+}>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type ProductQueryInput = z.infer<typeof productQuerySchema>;
+//# sourceMappingURL=products.schema.d.ts.map

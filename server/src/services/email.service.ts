@@ -1,7 +1,35 @@
 import { Resend } from "resend";
 import { env } from "../config/env";
+import { AppError } from "../middleware/error.middleware";
 
 const resend = new Resend(env.RESEND_API_KEY);
+
+async function sendEmail(params: {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  try {
+    const { data, error } = await resend.emails.send(params);
+
+    if (error) {
+      console.error("Resend email failed:", error);
+      throw new AppError(
+        `Email could not be sent: ${error.message ?? "Resend rejected the request"}`,
+        502
+      );
+    }
+
+    if (env.NODE_ENV !== "production") {
+      console.log(`Email queued via Resend: ${data?.id ?? "unknown id"} -> ${params.to}`);
+    }
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    console.error("Email service failed:", error);
+    throw new AppError("Email service failed. Check RESEND_API_KEY and EMAIL_FROM.", 502);
+  }
+}
 
 // ─── Branded email wrapper ────────────────────────────────────────────────────
 
@@ -94,7 +122,7 @@ export async function sendStaffInviteEmail(params: {
     </a>
   `;
 
-  await resend.emails.send({
+  await sendEmail({
     from: env.EMAIL_FROM,
     to: toEmail,
     subject: "You've been invited to VolteX Admin",
@@ -131,7 +159,7 @@ export async function sendOtpEmail(params: {
     </p>
   `;
 
-  await resend.emails.send({
+  await sendEmail({
     from: env.EMAIL_FROM,
     to: toEmail,
     subject: `${otp} — Your VolteX login code`,

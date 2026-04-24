@@ -46,7 +46,7 @@ export default function MyAccountClient() {
                     {user && (
                         <p className="text-white/40 text-[13px] mt-1">
                             Welcome back,{" "}
-                            <span className="text-[#49A5A2] font-medium">{user.name}</span>
+                            <span className="text-[#49A5A2] font-medium">{user.name ?? user.email}</span>
                         </p>
                     )}
                 </div>
@@ -56,12 +56,12 @@ export default function MyAccountClient() {
                     <div className="flex items-center gap-3 bg-[#1a1a1a]/80 border border-white/8 rounded-xl px-4 py-3 backdrop-blur-sm">
                         <Avatar size="lg" className="bg-linear-to-br from-[#49A5A2] to-[#3d8d8a] shadow-[0_2px_12px_rgba(73,165,162,0.35)]">
                             <AvatarFallback className="bg-transparent text-white font-bold text-[15px]">
-                                {user.name.charAt(0)}
+                                {(user.name ?? user.email).charAt(0).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-white text-[13px] font-semibold">{user.name}</p>
-                            <p className="text-white/40 text-[11px]">{user.phone}</p>
+                            <p className="text-white text-[13px] font-semibold">{user.name ?? "My Account"}</p>
+                            <p className="text-white/40 text-[11px]">{user.email}</p>
                         </div>
                     </div>
                 )}
@@ -102,7 +102,7 @@ export default function MyAccountClient() {
             <div className="pt-4">
                 <Button
                     variant="ghost"
-                    onClick={logout}
+                    onClick={() => void logout()}
                     className="text-white/30 text-[13px] hover:text-red-400 hover:bg-transparent px-0 cursor-pointer"
                 >
                     Log out from this account

@@ -5,17 +5,25 @@ import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Wrap any page that requires authentication.
- * If the user is not logged in, the login modal is opened immediately
- * and a blurred placeholder is shown instead of the page content.
+ * Waits for session bootstrap before prompting — avoids false modal opens.
  */
 export default function ProtectedPage({ children }: { children: React.ReactNode }) {
-    const { isLoggedIn, openLoginModal } = useAuth();
+    const { isLoggedIn, isReady, openLoginModal } = useAuth();
 
     useEffect(() => {
-        if (!isLoggedIn) {
+        if (isReady && !isLoggedIn) {
             openLoginModal();
         }
-    }, [isLoggedIn, openLoginModal]);
+    }, [isReady, isLoggedIn, openLoginModal]);
+
+    // Still bootstrapping — show nothing yet
+    if (!isReady) {
+        return (
+            <div className="w-full flex-1 flex items-center justify-center px-4 py-24">
+                <div className="w-6 h-6 rounded-full border-2 border-[#49A5A2]/30 border-t-[#49A5A2] animate-spin" />
+            </div>
+        );
+    }
 
     if (!isLoggedIn) {
         return (
