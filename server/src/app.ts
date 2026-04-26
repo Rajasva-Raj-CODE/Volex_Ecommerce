@@ -15,6 +15,7 @@ import cartRoutes from "./modules/cart/cart.routes";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import orderRoutes from "./modules/orders/orders.routes";
 import addressRoutes from "./modules/addresses/addresses.routes";
+import userRoutes from "./modules/users/users.routes";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
+app.use("/api/users", userRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

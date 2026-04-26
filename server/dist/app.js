@@ -19,6 +19,7 @@ const cart_routes_1 = __importDefault(require("./modules/cart/cart.routes"));
 const wishlist_routes_1 = __importDefault(require("./modules/wishlist/wishlist.routes"));
 const orders_routes_1 = __importDefault(require("./modules/orders/orders.routes"));
 const addresses_routes_1 = __importDefault(require("./modules/addresses/addresses.routes"));
+const users_routes_1 = __importDefault(require("./modules/users/users.routes"));
 const app = (0, express_1.default)();
 // ─── Security middleware ──────────────────────────────────────────────────────
 app.use((0, helmet_1.default)());
@@ -50,6 +51,7 @@ app.use("/api/cart", cart_routes_1.default);
 app.use("/api/wishlist", wishlist_routes_1.default);
 app.use("/api/orders", orders_routes_1.default);
 app.use("/api/addresses", addresses_routes_1.default);
+app.use("/api/users", users_routes_1.default);
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: "Route not found" });

@@ -21,7 +21,7 @@ const envSchema = zod_1.z.object({
     ADMIN_SEED_PASSWORD: zod_1.z.string().min(8).default("admin_change_me_123!"),
     ADMIN_SEED_NAME: zod_1.z.string().default("Admin"),
     CLIENT_URL: zod_1.z.string().default("http://localhost:3000"),
-    ADMIN_URL: zod_1.z.string().default("http://localhost:3002"),
+    ADMIN_URL: zod_1.z.string().default("http://localhost:5173"),
 });
 const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {

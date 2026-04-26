@@ -57,6 +57,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout, hasRole } = useAuth();
   const location = useLocation();
   const { isMobile } = useSidebar();
+  const displayName = user?.name ?? user?.email ?? "Unknown user";
+  const avatarInitial = (user?.name?.charAt(0) ?? user?.email?.charAt(0) ?? "U").toUpperCase();
 
   const visibleItems = NAV_ITEMS.filter((item) => hasRole(item.roles));
 
@@ -118,10 +120,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 }
               >
                 <Avatar className="size-8">
-                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{avatarInitial}</AvatarFallback>
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-medium">{user?.name}</span>
+                        <span className="truncate font-medium">{displayName}</span>
                         <span className="truncate text-xs text-muted-foreground">
                           {user ? getRoleLabel(user.role) : "Unknown"}
                         </span>
@@ -138,10 +140,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                       <Avatar className="size-8">
-                        <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{avatarInitial}</AvatarFallback>
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-medium">{user?.name}</span>
+                        <span className="truncate font-medium">{displayName}</span>
                         <span className="truncate text-xs text-muted-foreground">
                           {user?.email}
                         </span>

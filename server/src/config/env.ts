@@ -22,7 +22,7 @@ const envSchema = z.object({
   ADMIN_SEED_NAME: z.string().default("Admin"),
 
   CLIENT_URL: z.string().default("http://localhost:3000"),
-  ADMIN_URL: z.string().default("http://localhost:3002"),
+  ADMIN_URL: z.string().default("http://localhost:5173"),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -58,16 +58,18 @@ function buildQuery(params?: Record<string, string | number | boolean | undefine
 
 // GET /api/categories → ApiCategory[] (tree with children)
 export async function listCategories() {
-  return apiRequest<ApiCategory[]>("/categories", {
+  const result = await apiRequest<{ categories: ApiCategory[] }>("/categories", {
     cache: "no-store",
   });
+  return result.categories;
 }
 
 // GET /api/categories/flat → ApiCategory[] (flat list with parent info)
 export async function listCategoriesFlat() {
-  return apiRequest<ApiCategory[]>("/categories/flat", {
+  const result = await apiRequest<{ categories: ApiCategory[] }>("/categories/flat", {
     cache: "no-store",
   });
+  return result.categories;
 }
 
 // GET /api/products → { products, pagination }
@@ -79,7 +81,8 @@ export async function listProducts(params?: Record<string, string | number | boo
 
 // GET /api/products/:id → ApiProduct directly
 export async function getProduct(idOrSlug: string) {
-  return apiRequest<ApiProduct>(`/products/${idOrSlug}`, {
+  const result = await apiRequest<{ product: ApiProduct }>(`/products/${idOrSlug}`, {
     cache: "no-store",
   });
+  return result.product;
 }
