@@ -44,6 +44,7 @@ const router = (0, express_1.Router)();
 router.get("/", controller.listCategories);
 // GET /api/categories/flat — public: flat list for dropdowns
 router.get("/flat", controller.listCategoriesFlat);
+router.get("/admin", auth_middleware_1.requireAuth, (0, requireRole_middleware_1.requireRole)("ADMIN", "STAFF"), controller.listCategoriesAdmin);
 // GET /api/categories/:id — public: single category
 router.get("/:id", controller.getCategory);
 // POST /api/categories — ADMIN only

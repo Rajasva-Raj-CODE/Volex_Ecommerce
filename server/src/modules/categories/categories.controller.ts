@@ -17,6 +17,16 @@ export async function listCategoriesFlat(_req: Request, res: Response, next: Nex
   } catch (err) { next(err); }
 }
 
+export async function listCategoriesAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const page = Math.max(1, Number(req.query.page ?? 1));
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 20)));
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const result = await service.listCategoriesPaginated({ page, limit, search });
+    success(res, result);
+  } catch (err) { next(err); }
+}
+
 export async function getCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

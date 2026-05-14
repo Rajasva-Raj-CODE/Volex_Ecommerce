@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { listAllOrders, updateOrderStatus, type ApiOrder, type OrderStatus } from "@/lib/orders-api";
 import { ApiError } from "@/lib/api";
+import { PaginationControls } from "@/components/pagination-controls";
 
 const STATUS_STYLES: Record<OrderStatus, { variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
   PENDING: { variant: "outline", className: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50" },
@@ -39,6 +40,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const STATUS_TABS: Array<"All" | OrderStatus> = ["All", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+const PAGE_SIZE = 20;
 
 const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   PENDING: ["CONFIRMED", "CANCELLED"],
@@ -52,6 +54,9 @@ function formatDate(iso: string) {
 
 export default function Orders() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState<"All" | OrderStatus>("All");
@@ -60,26 +65,35 @@ export default function Orders() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await listAllOrders({ limit: 100 });
+      const result = await listAllOrders({
+        page,
+        limit: PAGE_SIZE,
+        status: activeStatus === "All" ? undefined : activeStatus,
+      });
       setOrders(result.orders);
+      setTotalOrders(result.pagination.total);
+      setTotalPages(result.pagination.totalPages || 1);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to load orders");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeStatus, page]);
 
   useEffect(() => {
     void fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeStatus]);
 
   const filtered = orders.filter((o) => {
     const matchesSearch =
       o.id.toLowerCase().includes(search.toLowerCase()) ||
       (o.user.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
       o.user.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = activeStatus === "All" || o.status === activeStatus;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   async function handleStatusUpdate(order: ApiOrder, status: OrderStatus) {
@@ -105,7 +119,7 @@ export default function Orders() {
           <div>
             <h1 className="text-xl font-semibold">Orders</h1>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Loading…" : `${filtered.length} of ${orders.length} orders`}
+              {loading ? "Loading…" : `${filtered.length} of ${totalOrders} orders`}
             </p>
           </div>
         </div>
@@ -128,9 +142,7 @@ export default function Orders() {
 
       <div className="flex items-center gap-1.5 flex-wrap">
         {STATUS_TABS.map((tab) => {
-          const count = tab === "All"
-            ? orders.length
-            : orders.filter((o) => o.status === tab).length;
+          const count = tab === activeStatus ? totalOrders : "";
           return (
             <Button
               key={tab}
@@ -140,9 +152,11 @@ export default function Orders() {
               className="h-8 gap-1.5 text-xs"
             >
               {tab === "All" ? "All" : STATUS_LABEL[tab]}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
-                {count}
-              </span>
+              {count !== "" && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
+                  {count}
+                </span>
+              )}
             </Button>
           );
         })}
@@ -266,6 +280,10 @@ export default function Orders() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+        <PaginationControls page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
       </div>
     </>
   );

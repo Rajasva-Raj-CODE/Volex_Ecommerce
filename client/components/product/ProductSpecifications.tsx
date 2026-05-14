@@ -47,49 +47,51 @@ export default function ProductSpecifications({
 }: ProductSpecificationsProps) {
   const [specsExpanded, setSpecsExpanded] = useState(false);
 
-  if (specGroups.length === 0) return null;
+  if (specGroups.length === 0 && (!overview || overview.length === 0)) return null;
 
   const visibleGroups = specsExpanded ? specGroups : specGroups.slice(0, 2);
 
   return (
     <div className="flex flex-col gap-6">
       {/* Specifications */}
-      <CollapsibleSection title="Specifications">
-        <div className="flex flex-col gap-6">
-          {visibleGroups.map((group) => (
-            <div key={group.groupName}>
-              <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-white">
-                {group.groupName}
-              </h4>
-              <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                {group.specs.map((spec) => (
-                  <div key={spec.label}>
-                    <p className="text-xs font-medium text-white/40">
-                      {spec.label}
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-white">
-                      {spec.value}
-                    </p>
-                  </div>
-                ))}
+      {specGroups.length > 0 && (
+        <CollapsibleSection title="Specifications">
+          <div className="flex flex-col gap-6">
+            {visibleGroups.map((group) => (
+              <div key={group.groupName}>
+                <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-white">
+                  {group.groupName}
+                </h4>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.specs.map((spec) => (
+                    <div key={spec.label}>
+                      <p className="text-xs font-medium text-white/40">
+                        {spec.label}
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-white">
+                        {spec.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 border-b border-white/5" />
               </div>
-              <div className="mt-4 border-b border-white/5" />
-            </div>
-          ))}
+            ))}
 
-          {specGroups.length > 2 && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setSpecsExpanded(!specsExpanded)}
-                className="rounded-lg border-white/20 bg-transparent px-8 text-sm font-semibold text-white hover:bg-[#252525] hover:text-white"
-              >
-                {specsExpanded ? "View Less" : "View More"}
-              </Button>
-            </div>
-          )}
-        </div>
-      </CollapsibleSection>
+            {specGroups.length > 2 && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setSpecsExpanded(!specsExpanded)}
+                  className="rounded-lg border-white/20 bg-transparent px-8 text-sm font-semibold text-white hover:bg-[#252525] hover:text-white"
+                >
+                  {specsExpanded ? "View Less" : "View More"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
 
       {/* Overview */}
       {overview && overview.length > 0 && (

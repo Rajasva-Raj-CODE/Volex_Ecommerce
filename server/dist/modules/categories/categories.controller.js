@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listCategories = listCategories;
 exports.listCategoriesFlat = listCategoriesFlat;
+exports.listCategoriesAdmin = listCategoriesAdmin;
 exports.getCategory = getCategory;
 exports.createCategory = createCategory;
 exports.updateCategory = updateCategory;
@@ -54,6 +55,18 @@ async function listCategoriesFlat(_req, res, next) {
     try {
         const categories = await service.listCategoriesFlat();
         (0, response_1.success)(res, { categories });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function listCategoriesAdmin(req, res, next) {
+    try {
+        const page = Math.max(1, Number(req.query.page ?? 1));
+        const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 20)));
+        const search = typeof req.query.search === "string" ? req.query.search : undefined;
+        const result = await service.listCategoriesPaginated({ page, limit, search });
+        (0, response_1.success)(res, result);
     }
     catch (err) {
         next(err);

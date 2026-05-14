@@ -22,6 +22,12 @@ const envSchema = zod_1.z.object({
     ADMIN_SEED_NAME: zod_1.z.string().default("Admin"),
     CLIENT_URL: zod_1.z.string().default("http://localhost:3000"),
     ADMIN_URL: zod_1.z.string().default("http://localhost:5173"),
+    SUPABASE_URL: zod_1.z.string().url("SUPABASE_URL must be a valid URL"),
+    SUPABASE_ANON_KEY: zod_1.z.string().min(1, "SUPABASE_ANON_KEY is required"),
+    SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+    SUPABASE_STORAGE_BUCKET: zod_1.z.string().min(1).default("product-images"),
+    RAZORPAY_KEY_ID: zod_1.z.string().min(1, "RAZORPAY_KEY_ID is required"),
+    RAZORPAY_KEY_SECRET: zod_1.z.string().min(1, "RAZORPAY_KEY_SECRET is required"),
 });
 const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {

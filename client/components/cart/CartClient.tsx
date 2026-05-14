@@ -14,13 +14,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getCart,
-  addToCart,
   updateCartItem,
   removeFromCart,
   type CartItem,
 } from "@/lib/cart-api";
 import { addToWishlist } from "@/lib/wishlist-api";
 import { ApiError } from "@/lib/api";
+import { notifyCartUpdated } from "@/lib/cart-events";
 
 function formatPrice(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN", { minimumFractionDigits: 2 });
@@ -63,6 +63,7 @@ export default function CartClient() {
         prev.map((i) => (i.productId === item.productId ? { ...i, quantity: newQty } : i))
       );
       setSubtotal((prev) => prev + Number(item.product.price) * delta);
+      notifyCartUpdated();
     } catch {
       // Re-fetch on failure
       void fetchCart();
@@ -79,6 +80,7 @@ export default function CartClient() {
       if (removed) {
         setItems((prev) => prev.filter((i) => i.productId !== productId));
         setSubtotal((prev) => prev - Number(removed.product.price) * removed.quantity);
+        notifyCartUpdated();
       }
     } catch {
       void fetchCart();
@@ -304,9 +306,12 @@ export default function CartClient() {
             </div>
           </div>
 
-          <button className="w-full mt-5 py-3 bg-[#49A5A2] text-white font-bold text-[15px] rounded-xl hover:bg-[#3d8e8b] transition-colors cursor-pointer">
+          <Link
+            href="/checkout"
+            className="w-full mt-5 py-3 bg-[#49A5A2] text-white font-bold text-[15px] rounded-xl hover:bg-[#3d8e8b] transition-colors cursor-pointer block text-center"
+          >
             Checkout
-          </button>
+          </Link>
         </div>
       </div>
     </div>

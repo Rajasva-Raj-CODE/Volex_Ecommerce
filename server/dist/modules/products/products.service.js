@@ -28,7 +28,7 @@ async function uniqueSlug(base, excludeId) {
 }
 // ─── List Products ────────────────────────────────────────────────────────────
 async function listProducts(query) {
-    const { page, limit, search, categoryId, brand, minPrice, maxPrice, inStock, isActive, sortBy, sortOrder, } = query;
+    const { page, limit, search, categoryId, brand, categoryIds, minPrice, maxPrice, stockMin, stockMax, inStock, isActive, sortBy, sortOrder, } = query;
     const where = {};
     if (search) {
         where.OR = [
@@ -37,14 +37,24 @@ async function listProducts(query) {
             { brand: { contains: search, mode: "insensitive" } },
         ];
     }
-    if (categoryId)
+    if (categoryIds) {
+        where.categoryId = { in: categoryIds.split(",").map((id) => id.trim()).filter(Boolean) };
+    }
+    else if (categoryId)
         where.categoryId = categoryId;
     if (brand)
         where.brand = { contains: brand, mode: "insensitive" };
     if (isActive !== undefined)
         where.isActive = isActive;
-    if (inStock)
-        where.stock = { gt: 0 };
+    if (stockMin !== undefined || stockMax !== undefined) {
+        where.stock = {};
+        if (stockMin !== undefined)
+            where.stock.gte = stockMin;
+        if (stockMax !== undefined)
+            where.stock.lte = stockMax;
+    }
+    else if (inStock !== undefined)
+        where.stock = inStock ? { gt: 0 } : { equals: 0 };
     if (minPrice !== undefined || maxPrice !== undefined) {
         where.price = {};
         if (minPrice !== undefined)
@@ -103,6 +113,7 @@ async function createProduct(input) {
             slug,
             price: input.price,
             mrp: input.mrp ?? null,
+            rating: input.rating ?? null,
         },
         include: {
             category: { select: { id: true, name: true, slug: true } },
@@ -128,7 +139,7 @@ async function updateProduct(id, input) {
     }
     return prisma_1.prisma.product.update({
         where: { id },
-        data: { ...input, slug },
+        data: { ...input, slug, rating: input.rating ?? undefined },
         include: {
             category: { select: { id: true, name: true, slug: true } },
         },

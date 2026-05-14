@@ -32,6 +32,10 @@ export interface OrderAddress {
 export interface CustomerOrder {
   id: string;
   status: CustomerOrderStatus;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  paymentMethod: string;
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
   totalAmount: string;
   createdAt: string;
   updatedAt: string;
@@ -64,5 +68,18 @@ export function getUserOrders(params?: {
 
 export async function getOrderById(id: string): Promise<CustomerOrder> {
   const result = await authedApiRequest<{ order: CustomerOrder }>(`/orders/${id}`);
+  return result.order;
+}
+
+export interface CreateOrderInput {
+  addressId: string;
+  items: { productId: string; quantity: number }[];
+}
+
+export async function createOrder(input: CreateOrderInput): Promise<CustomerOrder> {
+  const result = await authedApiRequest<{ order: CustomerOrder }>("/orders", {
+    method: "POST",
+    json: input,
+  });
   return result.order;
 }

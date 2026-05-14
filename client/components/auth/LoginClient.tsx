@@ -17,7 +17,7 @@ type Tab = "login" | "register";
 
 export default function LoginClient() {
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login, register, continueAsGuest } = useAuth();
 
   const [tab, setTab] = useState<Tab>("login");
   const [name, setName] = useState("");
@@ -25,6 +25,7 @@ export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState("");
 
   function switchTab(t: Tab) {
@@ -48,6 +49,19 @@ export default function LoginClient() {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setError("");
+    setGuestLoading(true);
+    try {
+      await continueAsGuest();
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not continue as guest. Please try again.");
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -180,13 +194,22 @@ export default function LoginClient() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || guestLoading}
                 className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_6px_24px_rgba(73,165,162,0.35)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading
                   ? (tab === "login" ? "Signing in…" : "Creating account…")
                   : (tab === "login" ? "Sign In" : "Create Account")
                 }
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGuestLogin}
+                disabled={loading || guestLoading}
+                className="w-full h-[50px] rounded-xl border border-white/[0.12] bg-white/[0.04] text-white/85 text-[14px] font-semibold hover:bg-white/[0.08] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {guestLoading ? "Entering…" : "Continue as Guest"}
               </button>
             </form>
 

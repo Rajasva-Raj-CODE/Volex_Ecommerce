@@ -16,6 +16,9 @@ import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import orderRoutes from "./modules/orders/orders.routes";
 import addressRoutes from "./modules/addresses/addresses.routes";
 import userRoutes from "./modules/users/users.routes";
+import uploadRoutes from "./modules/uploads/uploads.routes";
+import paymentRoutes from "./modules/payments/payments.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
@@ -57,6 +60,9 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/uploads", uploadRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

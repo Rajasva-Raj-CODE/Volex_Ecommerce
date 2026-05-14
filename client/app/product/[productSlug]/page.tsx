@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/navbar/Navbar";
 import Footer from "@/components/layout/Footer";
-import { getProductBySlug, getRelatedProducts } from "@/lib/product-data";
+import { getProductBySlug, getRelatedProducts, apiProductToDetail } from "@/lib/product-data";
+import { getProduct } from "@/lib/catalog-api";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductSpecifications from "@/components/product/ProductSpecifications";
@@ -16,14 +17,23 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import type { ProductDetail } from "@/lib/types";
 
 interface ProductPageProps {
   params: Promise<{ productSlug: string }>;
 }
 
+async function resolveProduct(slug: string): Promise<ProductDetail | undefined> {
+  try {
+    return apiProductToDetail(await getProduct(slug));
+  } catch {
+    return getProductBySlug(slug);
+  }
+}
+
 export async function generateMetadata({ params }: ProductPageProps) {
   const { productSlug } = await params;
-  const product = getProductBySlug(productSlug);
+  const product = await resolveProduct(productSlug);
   if (!product) return { title: "Product Not Found | VolteX" };
   return {
     title: `${product.title} | VolteX`,
@@ -33,7 +43,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { productSlug } = await params;
-  const product = getProductBySlug(productSlug);
+  const product = await resolveProduct(productSlug);
   if (!product) notFound();
 
   const relatedProducts = getRelatedProducts(product.relatedProductIds);

@@ -1,5 +1,30 @@
 import { apiRequest } from "./api";
 
+export interface ProductHighlight {
+  text: string;
+}
+
+export interface ProductSpecGroup {
+  groupName: string;
+  specs: { label: string; value: string }[];
+}
+
+export interface ProductOverviewSection {
+  heading: string;
+  description: string;
+}
+
+export interface ProductVariantGroup {
+  name: string;
+  options: { label: string; selected?: boolean }[];
+}
+
+export interface ProductBankOffer {
+  id: string;
+  bank: string;
+  description: string;
+}
+
 export interface ApiProduct {
   id: string;
   name: string;
@@ -10,6 +35,18 @@ export interface ApiProduct {
   stock: number;
   images: string[];
   brand: string | null;
+  highlights: ProductHighlight[] | null;
+  specGroups: ProductSpecGroup[] | null;
+  overview: ProductOverviewSection[] | null;
+  variants: ProductVariantGroup[] | null;
+  bankOffers: ProductBankOffer[] | null;
+  relatedProductIds: string[];
+  warranty: string | null;
+  rating: string | null;
+  ratingCount: number;
+  reviewCount: number;
+  deliveryDate: string | null;
+  deliveryFee: string | null;
   isActive: boolean;
   categoryId: string;
   category: { id: string; name: string; slug: string } | null;
@@ -37,6 +74,18 @@ export interface CreateProductInput {
   stock: number;
   images: string[];
   brand?: string;
+  highlights?: ProductHighlight[];
+  specGroups?: ProductSpecGroup[];
+  overview?: ProductOverviewSection[];
+  variants?: ProductVariantGroup[];
+  bankOffers?: ProductBankOffer[];
+  relatedProductIds?: string[];
+  warranty?: string;
+  rating?: number;
+  ratingCount?: number;
+  reviewCount?: number;
+  deliveryDate?: string;
+  deliveryFee?: string;
   categoryId: string;
   isActive?: boolean;
 }
@@ -51,6 +100,8 @@ export interface ProductQuery {
   brand?: string;
   minPrice?: number;
   maxPrice?: number;
+  stockMin?: number;
+  stockMax?: number;
   inStock?: boolean;
   isActive?: boolean;
   sortBy?: "price" | "name" | "createdAt" | "stock";

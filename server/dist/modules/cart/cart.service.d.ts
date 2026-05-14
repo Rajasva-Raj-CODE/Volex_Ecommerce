@@ -27,9 +27,18 @@ export declare function getCart(userId: string): Promise<{
 export declare function addToCart(userId: string, productId: string, quantity: number): Promise<{
     product: {
         name: string;
+        category: {
+            name: string;
+            id: string;
+        };
         id: string;
+        isActive: boolean;
+        slug: string;
         price: import("@prisma/client/runtime/library").Decimal;
+        mrp: import("@prisma/client/runtime/library").Decimal | null;
+        stock: number;
         images: string[];
+        brand: string | null;
     };
 } & {
     id: string;
@@ -40,9 +49,18 @@ export declare function addToCart(userId: string, productId: string, quantity: n
 export declare function updateCartItem(userId: string, productId: string, quantity: number): Promise<{
     product: {
         name: string;
+        category: {
+            name: string;
+            id: string;
+        };
         id: string;
+        isActive: boolean;
+        slug: string;
         price: import("@prisma/client/runtime/library").Decimal;
+        mrp: import("@prisma/client/runtime/library").Decimal | null;
+        stock: number;
         images: string[];
+        brand: string | null;
     };
 } & {
     id: string;

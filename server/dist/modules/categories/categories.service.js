@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listCategories = listCategories;
 exports.listCategoriesFlat = listCategoriesFlat;
+exports.listCategoriesPaginated = listCategoriesPaginated;
 exports.getCategory = getCategory;
 exports.createCategory = createCategory;
 exports.updateCategory = updateCategory;
@@ -50,6 +51,39 @@ async function listCategoriesFlat() {
             parent: { select: { id: true, name: true } },
         },
     });
+}
+async function listCategoriesPaginated(query) {
+    const where = query.search
+        ? {
+            OR: [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { slug: { contains: query.search, mode: "insensitive" } },
+            ],
+        }
+        : {};
+    const [total, categories] = await Promise.all([
+        prisma_1.prisma.category.count({ where }),
+        prisma_1.prisma.category.findMany({
+            where,
+            skip: (query.page - 1) * query.limit,
+            take: query.limit,
+            orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }],
+            include: {
+                parent: { select: { id: true, name: true } },
+            },
+        }),
+    ]);
+    return {
+        categories,
+        pagination: {
+            total,
+            page: query.page,
+            limit: query.limit,
+            totalPages: Math.ceil(total / query.limit),
+            hasNext: query.page * query.limit < total,
+            hasPrev: query.page > 1,
+        },
+    };
 }
 // ─── Get single category ──────────────────────────────────────────────────────
 async function getCategory(idOrSlug) {

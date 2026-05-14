@@ -50,6 +50,36 @@ export declare function listCategoriesFlat(): Promise<({
     imageUrl: string | null;
     parentId: string | null;
 })[]>;
+export declare function listCategoriesPaginated(query: {
+    page: number;
+    limit: number;
+    search?: string;
+}): Promise<{
+    categories: ({
+        parent: {
+            name: string;
+            id: string;
+        } | null;
+    } & {
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        slug: string;
+        sortOrder: number;
+        imageUrl: string | null;
+        parentId: string | null;
+    })[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    };
+}>;
 export declare function getCategory(idOrSlug: string): Promise<{
     parent: {
         name: string;

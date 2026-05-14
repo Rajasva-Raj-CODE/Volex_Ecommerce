@@ -3,6 +3,14 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../middleware/error.middleware";
 import type { PlaceOrderInput, UpdateOrderStatusInput, OrderQueryInput } from "./orders.schema";
 
+interface PaymentDetails {
+  paymentMethod: string;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+}
+
 const ORDER_INCLUDE = {
   address: true,
   items: {
@@ -14,7 +22,7 @@ const ORDER_INCLUDE = {
 
 // ─── Place Order ──────────────────────────────────────────────────────────────
 
-export async function placeOrder(userId: string, input: PlaceOrderInput) {
+export async function placeOrder(userId: string, input: PlaceOrderInput, payment?: PaymentDetails) {
   // Verify address belongs to user
   const address = await prisma.address.findFirst({
     where: { id: input.addressId, userId },
@@ -37,33 +45,52 @@ export async function placeOrder(userId: string, input: PlaceOrderInput) {
   }
 
   // Create order + items + decrement stock in a transaction
-  const order = await prisma.$transaction(async (tx) => {
-    const newOrder = await tx.order.create({
-      data: {
-        userId,
-        addressId: input.addressId,
-        totalAmount,
-        items: { create: orderItems },
-      },
-      include: ORDER_INCLUDE,
-    });
-
-    // Decrement stock for each product
-    for (const item of input.items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
+  const order = await prisma.$transaction(
+    async (tx) => {
+      const newOrder = await tx.order.create({
+        data: {
+          userId,
+          addressId: input.addressId,
+          totalAmount,
+          paymentMethod: payment?.paymentMethod ?? "COD",
+          paymentStatus: payment?.paymentStatus ?? "PENDING",
+          razorpayOrderId: payment?.razorpayOrderId,
+          razorpayPaymentId: payment?.razorpayPaymentId,
+          razorpaySignature: payment?.razorpaySignature,
+          items: { create: orderItems },
+        },
+        include: ORDER_INCLUDE,
       });
-    }
 
-    // Clear cart items that were ordered
-    const orderedProductIds = input.items.map((i) => i.productId);
-    await tx.cartItem.deleteMany({
-      where: { userId, productId: { in: orderedProductIds } },
-    });
+      // Decrement stock atomically. The stock guard prevents overselling if two
+      // customers place orders for the same product at the same time.
+      await Promise.all(
+        input.items.map(async (item) => {
+          const result = await tx.product.updateMany({
+            where: {
+              id: item.productId,
+              isActive: true,
+              stock: { gte: item.quantity },
+            },
+            data: { stock: { decrement: item.quantity } },
+          });
 
-    return newOrder;
-  });
+          if (result.count !== 1) {
+            throw new AppError("Product stock changed. Please review your cart.", 409);
+          }
+        })
+      );
+
+      // Clear cart items that were ordered
+      const orderedProductIds = input.items.map((i) => i.productId);
+      await tx.cartItem.deleteMany({
+        where: { userId, productId: { in: orderedProductIds } },
+      });
+
+      return newOrder;
+    },
+    { timeout: 15_000 }
+  );
 
   return order;
 }

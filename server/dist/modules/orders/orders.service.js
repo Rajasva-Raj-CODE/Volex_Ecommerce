@@ -16,7 +16,7 @@ const ORDER_INCLUDE = {
     },
 };
 // ─── Place Order ──────────────────────────────────────────────────────────────
-async function placeOrder(userId, input) {
+async function placeOrder(userId, input, payment) {
     // Verify address belongs to user
     const address = await prisma_1.prisma.address.findFirst({
         where: { id: input.addressId, userId },
@@ -44,24 +44,37 @@ async function placeOrder(userId, input) {
                 userId,
                 addressId: input.addressId,
                 totalAmount,
+                paymentMethod: payment?.paymentMethod ?? "COD",
+                paymentStatus: payment?.paymentStatus ?? "PENDING",
+                razorpayOrderId: payment?.razorpayOrderId,
+                razorpayPaymentId: payment?.razorpayPaymentId,
+                razorpaySignature: payment?.razorpaySignature,
                 items: { create: orderItems },
             },
             include: ORDER_INCLUDE,
         });
-        // Decrement stock for each product
-        for (const item of input.items) {
-            await tx.product.update({
-                where: { id: item.productId },
+        // Decrement stock atomically. The stock guard prevents overselling if two
+        // customers place orders for the same product at the same time.
+        await Promise.all(input.items.map(async (item) => {
+            const result = await tx.product.updateMany({
+                where: {
+                    id: item.productId,
+                    isActive: true,
+                    stock: { gte: item.quantity },
+                },
                 data: { stock: { decrement: item.quantity } },
             });
-        }
+            if (result.count !== 1) {
+                throw new error_middleware_1.AppError("Product stock changed. Please review your cart.", 409);
+            }
+        }));
         // Clear cart items that were ordered
         const orderedProductIds = input.items.map((i) => i.productId);
         await tx.cartItem.deleteMany({
             where: { userId, productId: { in: orderedProductIds } },
         });
         return newOrder;
-    });
+    }, { timeout: 15_000 });
     return order;
 }
 // ─── Get user's orders ────────────────────────────────────────────────────────

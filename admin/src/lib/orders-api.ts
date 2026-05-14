@@ -12,6 +12,10 @@ export interface ApiOrderItem {
 export interface ApiOrder {
   id: string;
   status: OrderStatus;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  paymentMethod: string;
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
   totalAmount: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +42,10 @@ export interface OrdersListResponse {
   };
 }
 
+interface OrderResponse {
+  order: ApiOrder;
+}
+
 export interface OrderQuery {
   page?: number;
   limit?: number;
@@ -54,6 +62,7 @@ export function listAllOrders(query: OrderQuery = {}) {
   return apiRequest<OrdersListResponse>(`/orders${qs ? `?${qs}` : ""}`);
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus) {
-  return apiRequest<ApiOrder>(`/orders/${id}/status`, { method: "PUT", json: { status } });
+export async function updateOrderStatus(id: string, status: OrderStatus) {
+  const result = await apiRequest<OrderResponse>(`/orders/${id}/status`, { method: "PUT", json: { status } });
+  return result.order;
 }

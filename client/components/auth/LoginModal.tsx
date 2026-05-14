@@ -21,12 +21,13 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { login } = useAuth();
+  const { login, continueAsGuest } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleClose = () => {
@@ -49,6 +50,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setError(err instanceof ApiError ? err.message : "Invalid email or password.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setError("");
+    setGuestLoading(true);
+    try {
+      await continueAsGuest();
+      handleClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not continue as guest. Please try again.");
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -135,10 +149,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || guestLoading}
               className="w-full h-[50px] rounded-xl bg-linear-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] shadow-[0_6px_24px_rgba(73,165,162,0.35)] cursor-pointer"
             >
               {loading ? "Signing in…" : "Sign In"}
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={loading || guestLoading}
+              variant="outline"
+              className="w-full h-[50px] rounded-xl border-white/[0.12] bg-white/[0.04] text-white/85 text-[14px] font-semibold hover:bg-white/[0.08] hover:text-white cursor-pointer"
+            >
+              {guestLoading ? "Entering…" : "Continue as Guest"}
             </Button>
           </form>
 

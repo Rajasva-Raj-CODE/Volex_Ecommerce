@@ -1,4 +1,10 @@
 import { apiRequest } from "./api";
+import type {
+  ProductHighlight,
+  ProductOverviewSection,
+  ProductSpecGroup,
+  ProductVariantGroup,
+} from "./types";
 
 export interface ApiCategory {
   id: string;
@@ -21,6 +27,18 @@ export interface ApiProduct {
   stock: number;
   images: string[];
   brand?: string | null;
+  highlights?: ProductHighlight[] | null;
+  specGroups?: ProductSpecGroup[] | null;
+  overview?: ProductOverviewSection[] | null;
+  variants?: ProductVariantGroup[] | null;
+  bankOffers?: { id: string; bank: string; description: string }[] | null;
+  relatedProductIds?: string[];
+  warranty?: string | null;
+  rating?: string | number | null;
+  ratingCount?: number;
+  reviewCount?: number;
+  deliveryDate?: string | null;
+  deliveryFee?: string | null;
   isActive: boolean;
   categoryId: string;
   category?: {

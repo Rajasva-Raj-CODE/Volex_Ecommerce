@@ -29,7 +29,8 @@ async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
 export async function listProducts(query: ProductQueryInput) {
   const {
     page, limit, search, categoryId, brand,
-    minPrice, maxPrice, inStock, isActive,
+    categoryIds,
+    minPrice, maxPrice, stockMin, stockMax, inStock, isActive,
     sortBy, sortOrder,
   } = query;
 
@@ -42,10 +43,16 @@ export async function listProducts(query: ProductQueryInput) {
       { brand: { contains: search, mode: "insensitive" } },
     ];
   }
-  if (categoryId) where.categoryId = categoryId;
+  if (categoryIds) {
+    where.categoryId = { in: categoryIds.split(",").map((id) => id.trim()).filter(Boolean) };
+  } else if (categoryId) where.categoryId = categoryId;
   if (brand) where.brand = { contains: brand, mode: "insensitive" };
   if (isActive !== undefined) where.isActive = isActive;
-  if (inStock) where.stock = { gt: 0 };
+  if (stockMin !== undefined || stockMax !== undefined) {
+    where.stock = {};
+    if (stockMin !== undefined) where.stock.gte = stockMin;
+    if (stockMax !== undefined) where.stock.lte = stockMax;
+  } else if (inStock !== undefined) where.stock = inStock ? { gt: 0 } : { equals: 0 };
   if (minPrice !== undefined || maxPrice !== undefined) {
     where.price = {};
     if (minPrice !== undefined) where.price.gte = minPrice;
@@ -108,6 +115,7 @@ export async function createProduct(input: CreateProductInput) {
       slug,
       price: input.price,
       mrp: input.mrp ?? null,
+      rating: input.rating ?? null,
     },
     include: {
       category: { select: { id: true, name: true, slug: true } },
@@ -135,7 +143,7 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
 
   return prisma.product.update({
     where: { id },
-    data: { ...input, slug },
+    data: { ...input, slug, rating: input.rating ?? undefined },
     include: {
       category: { select: { id: true, name: true, slug: true } },
     },

@@ -50,6 +50,42 @@ export async function listCategoriesFlat() {
   });
 }
 
+export async function listCategoriesPaginated(query: { page: number; limit: number; search?: string }) {
+  const where = query.search
+    ? {
+        OR: [
+          { name: { contains: query.search, mode: "insensitive" as const } },
+          { slug: { contains: query.search, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [total, categories] = await Promise.all([
+    prisma.category.count({ where }),
+    prisma.category.findMany({
+      where,
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+      orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }],
+      include: {
+        parent: { select: { id: true, name: true } },
+      },
+    }),
+  ]);
+
+  return {
+    categories,
+    pagination: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
+      hasNext: query.page * query.limit < total,
+      hasPrev: query.page > 1,
+    },
+  };
+}
+
 // ─── Get single category ──────────────────────────────────────────────────────
 
 export async function getCategory(idOrSlug: string) {

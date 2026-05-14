@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/contexts/AuthContext";
 import GlobalLoginModal from "@/components/auth/GlobalLoginModal";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     {children}
                     {/* Global login modal — opens from any page via useAuth().openLoginModal() */}
                     <GlobalLoginModal />
+                    <Toaster position="top-right" />
                 </AuthProvider>
             </body>
         </html>

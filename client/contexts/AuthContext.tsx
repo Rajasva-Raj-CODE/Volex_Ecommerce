@@ -30,6 +30,7 @@ interface AuthContextValue {
   loginModalOpen: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
+  continueAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   openLoginModal: () => void;
   closeLoginModal: () => void;
@@ -46,15 +47,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Bootstrap — restore session from localStorage on mount
   useEffect(() => {
+    let cancelled = false;
+    const markReady = () => {
+      if (!cancelled) setIsReady(true);
+    };
+
     const tokens = getStoredTokens();
     if (!tokens) {
-      setIsReady(true);
-      return;
+      queueMicrotask(markReady);
+      return () => {
+        cancelled = true;
+      };
     }
     getCurrentCustomer()
-      .then((u) => setUser(u))
+      .then((u) => {
+        if (!cancelled) setUser(u);
+      })
       .catch(() => clearStoredTokens())
-      .finally(() => setIsReady(true));
+      .finally(markReady);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -67,6 +81,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
     const tokens = await registerCustomer(email, password, name);
+    setStoredTokens(tokens);
+    const currentUser = await getCurrentCustomer();
+    setUser(currentUser);
+    setLoginModalOpen(false);
+  }, []);
+
+  const continueAsGuest = useCallback(async () => {
+    const id = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    const tokens = await registerCustomer(
+      `guest-${id}@voltex.guest`,
+      `Guest-${id}`.slice(0, 32),
+      "Guest"
+    );
     setStoredTokens(tokens);
     const currentUser = await getCurrentCustomer();
     setUser(currentUser);
@@ -90,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginModalOpen,
         login,
         register,
+        continueAsGuest,
         logout,
         openLoginModal,
         closeLoginModal,

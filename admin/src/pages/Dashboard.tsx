@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/table";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { ApiError } from "@/lib/api";
+import { getDashboardSummary, type DashboardSummary } from "@/lib/dashboard-api";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -28,46 +31,86 @@ import {
   Add01Icon,
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
-
-const SUPER_ADMIN_STATS = [
-  { label: "Total Revenue", value: "₹12,45,890", change: "+12.5%", up: true, description: "Trending up this month", detail: "Revenue for the last 6 months", icon: DollarCircleIcon, color: "text-emerald-500" },
-  { label: "Total Orders", value: "1,284", change: "+8.2%", up: true, description: "Strong order volume", detail: "Orders processed this month", icon: ShoppingCart01Icon, color: "text-blue-500" },
-  { label: "Total Customers", value: "3,421", change: "+15.3%", up: true, description: "Growing customer base", detail: "Active customers on platform", icon: UserGroupIcon, color: "text-purple-500" },
-  { label: "Total Products", value: "486", change: "-2.1%", up: false, description: "Slight decrease", detail: "Products in catalog", icon: Package01Icon, color: "text-orange-500" },
-];
-
-const PM_STATS = [
-  { label: "Total Products", value: "486", change: "-2.1%", up: false, description: "Slight decrease", detail: "Products in catalog", icon: Package01Icon, color: "text-orange-500" },
-  { label: "Low Stock Items", value: "23", change: "+5", up: false, description: "Needs attention", detail: "Items below threshold", icon: AlertCircleIcon, color: "text-red-500" },
-  { label: "New This Month", value: "18", change: "+6", up: true, description: "Growing catalog", detail: "Products added recently", icon: Add01Icon, color: "text-green-500" },
-];
-
-const RECENT_ORDERS = [
-  { id: "ORD-1284", customer: "Amit Patel", total: "₹69,999", status: "Processing", date: "26 Mar 2026" },
-  { id: "ORD-1283", customer: "Sneha Reddy", total: "₹22,990", status: "Shipped", date: "25 Mar 2026" },
-  { id: "ORD-1282", customer: "Rohit Singh", total: "₹9,990", status: "Delivered", date: "25 Mar 2026" },
-  { id: "ORD-1281", customer: "Meera Iyer", total: "₹89,990", status: "Pending", date: "24 Mar 2026" },
-  { id: "ORD-1280", customer: "Vikram Shah", total: "₹36,900", status: "Delivered", date: "24 Mar 2026" },
-];
+import { toast } from "sonner";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  Pending: "outline",
-  Processing: "secondary",
-  Shipped: "default",
-  Delivered: "outline",
+  PENDING: "outline",
+  CONFIRMED: "secondary",
+  SHIPPED: "default",
+  DELIVERED: "outline",
+  CANCELLED: "destructive",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  Pending: "text-amber-600 bg-amber-50",
-  Processing: "text-blue-600 bg-blue-50",
-  Shipped: "text-purple-600 bg-purple-50",
-  Delivered: "text-emerald-600 bg-emerald-50",
+  PENDING: "text-amber-600 bg-amber-50",
+  CONFIRMED: "text-blue-600 bg-blue-50",
+  SHIPPED: "text-purple-600 bg-purple-50",
+  DELIVERED: "text-emerald-600 bg-emerald-50",
+  CANCELLED: "text-red-600 bg-red-50",
 };
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+};
+
+function formatCurrency(value: string | number) {
+  return `₹${Number(value).toLocaleString("en-IN")}`;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const isAdmin = user?.role === "ADMIN";
-  const stats = isAdmin ? SUPER_ADMIN_STATS : PM_STATS;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSummary() {
+      setLoading(true);
+      try {
+        const result = await getDashboardSummary();
+        if (!cancelled) setSummary(result);
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(err instanceof ApiError ? err.message : "Failed to load dashboard");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadSummary();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const totals = summary?.totals;
+    const allStats = [
+      { label: "Total Revenue", value: totals ? formatCurrency(totals.revenue) : "—", change: totals ? formatCurrency(totals.monthlyRevenue) : "—", up: true, description: "Revenue this month", detail: "All paid order revenue", icon: DollarCircleIcon, color: "text-emerald-500" },
+      { label: "Total Orders", value: totals ? totals.orders.toLocaleString("en-IN") : "—", change: totals ? `+${totals.monthlyOrders}` : "—", up: true, description: "Orders this month", detail: "Total orders processed", icon: ShoppingCart01Icon, color: "text-blue-500" },
+      { label: "Total Customers", value: totals ? totals.customers.toLocaleString("en-IN") : "—", change: "Live", up: true, description: "Customer accounts", detail: "Registered customer users", icon: UserGroupIcon, color: "text-purple-500" },
+      { label: "Total Products", value: totals ? totals.products.toLocaleString("en-IN") : "—", change: totals ? `+${totals.newProductsThisMonth}` : "—", up: true, description: "Catalog size", detail: "Products added this month", icon: Package01Icon, color: "text-orange-500" },
+    ];
+
+    const staffStats = [
+      allStats[3],
+      { label: "Low Stock Items", value: totals ? totals.lowStockItems.toLocaleString("en-IN") : "—", change: totals ? `${totals.lowStockItems}` : "—", up: false, description: "Needs attention", detail: "Active products at 5 or fewer units", icon: AlertCircleIcon, color: "text-red-500" },
+      { label: "New This Month", value: totals ? totals.newProductsThisMonth.toLocaleString("en-IN") : "—", change: totals ? `+${totals.newProductsThisMonth}` : "—", up: true, description: "Growing catalog", detail: "Products added recently", icon: Add01Icon, color: "text-green-500" },
+    ];
+
+    return isAdmin ? allStats : staffStats;
+  }, [isAdmin, summary]);
 
   return (
     <>
@@ -93,7 +136,7 @@ export default function Dashboard() {
               </CardHeader>
               <div className="px-6 py-2">
                 <div className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                  {stat.value}
+                  {loading ? "…" : stat.value}
                 </div>
               </div>
               <CardFooter className="flex-col items-start gap-1.5 pt-2 text-sm">
@@ -138,20 +181,26 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {RECENT_ORDERS.map((order) => (
+              {summary?.recentOrders.length ? summary.recentOrders.map((order) => (
                 <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="font-medium text-primary">{order.id}</TableCell>
-                  <TableCell className="font-medium">{order.customer}</TableCell>
-                  <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">{order.total}</TableCell>
+                  <TableCell className="font-medium text-primary">{order.id.slice(0, 8)}…</TableCell>
+                  <TableCell className="font-medium">{order.user.name ?? order.user.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(order.createdAt)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">{formatCurrency(order.totalAmount)}</TableCell>
                   <TableCell>
                     <Badge variant={STATUS_VARIANT[order.status] ?? "secondary"} className={STATUS_COLORS[order.status]}>
-                      {order.status === "Delivered" && <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} className="mr-1" />}
-                      {order.status}
+                      {order.status === "DELIVERED" && <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} className="mr-1" />}
+                      {STATUS_LABEL[order.status] ?? order.status}
                     </Badge>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                    {loading ? "Loading recent orders…" : "No orders yet."}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

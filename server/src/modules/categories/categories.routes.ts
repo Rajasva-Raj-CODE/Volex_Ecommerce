@@ -14,6 +14,13 @@ router.get("/", controller.listCategories);
 // GET /api/categories/flat — public: flat list for dropdowns
 router.get("/flat", controller.listCategoriesFlat);
 
+router.get(
+  "/admin",
+  requireAuth as RequestHandler,
+  requireRole("ADMIN", "STAFF") as RequestHandler,
+  controller.listCategoriesAdmin as unknown as RequestHandler
+);
+
 // GET /api/categories/:id — public: single category
 router.get("/:id", controller.getCategory);
 

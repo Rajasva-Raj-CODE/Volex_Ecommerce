@@ -27,6 +27,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { getProduct, updateProduct, type ApiProduct } from "@/lib/products-api";
 import { listCategoriesFlat, type ApiCategory } from "@/lib/categories-api";
+import { uploadImage } from "@/lib/uploads-api";
 import { ApiError } from "@/lib/api";
 
 export default function EditProduct() {
@@ -46,10 +47,23 @@ export default function EditProduct() {
   const [mrp, setMrp] = useState("");
   const [stock, setStock] = useState("0");
   const [brand, setBrand] = useState("");
+  const [warranty, setWarranty] = useState("");
+  const [rating, setRating] = useState("");
+  const [ratingCount, setRatingCount] = useState("0");
+  const [reviewCount, setReviewCount] = useState("0");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [highlightsText, setHighlightsText] = useState("");
+  const [specGroupsJson, setSpecGroupsJson] = useState("[]");
+  const [overviewJson, setOverviewJson] = useState("[]");
+  const [bankOffersJson, setBankOffersJson] = useState("[]");
+  const [variantsJson, setVariantsJson] = useState("[]");
+  const [relatedProductIdsText, setRelatedProductIdsText] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([""]);
 
+  const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -66,6 +80,18 @@ export default function EditProduct() {
         setMrp(p.mrp ? String(Number(p.mrp)) : "");
         setStock(String(p.stock));
         setBrand(p.brand ?? "");
+        setWarranty(p.warranty ?? "");
+        setRating(p.rating ? String(Number(p.rating)) : "");
+        setRatingCount(String(p.ratingCount ?? 0));
+        setReviewCount(String(p.reviewCount ?? 0));
+        setDeliveryDate(p.deliveryDate ?? "");
+        setDeliveryFee(p.deliveryFee ?? "");
+        setHighlightsText((p.highlights ?? []).map((h) => h.text).join("\n"));
+        setSpecGroupsJson(JSON.stringify(p.specGroups ?? [], null, 2));
+        setOverviewJson(JSON.stringify(p.overview ?? [], null, 2));
+        setBankOffersJson(JSON.stringify(p.bankOffers ?? [], null, 2));
+        setVariantsJson(JSON.stringify(p.variants ?? [], null, 2));
+        setRelatedProductIdsText((p.relatedProductIds ?? []).join(", "));
         setCategoryId(p.categoryId);
         setIsActive(p.isActive);
         setImageUrls(p.images.length > 0 ? p.images : [""]);
@@ -97,11 +123,38 @@ export default function EditProduct() {
     setImageUrls((prev) => prev.filter((_, i) => i !== index));
   }
 
+  async function handleImageUpload(index: number, file: File | undefined) {
+    if (!file) return;
+    setUploadingImageIndex(index);
+    try {
+      const image = await uploadImage(file, "products");
+      handleImageChange(index, image.url);
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to upload image");
+    } finally {
+      setUploadingImageIndex(null);
+    }
+  }
+
   function validate() {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Name is required";
     if (!price || Number(price) <= 0) errs.price = "Price must be greater than 0";
     if (!categoryId) errs.categoryId = "Category is required";
+    for (const [key, value] of Object.entries({
+      specGroupsJson,
+      overviewJson,
+      bankOffersJson,
+      variantsJson,
+    })) {
+      try {
+        const parsed = JSON.parse(value || "[]") as unknown;
+        if (!Array.isArray(parsed)) errs[key] = "Must be a JSON array";
+      } catch {
+        errs[key] = "Invalid JSON";
+      }
+    }
     return errs;
   }
 
@@ -114,6 +167,11 @@ export default function EditProduct() {
     }
 
     const validImages = imageUrls.map((u) => u.trim()).filter((u) => u.length > 0);
+    const highlights = highlightsText
+      .split("\n")
+      .map((text) => text.trim())
+      .filter(Boolean)
+      .map((text) => ({ text }));
 
     setSubmitting(true);
     try {
@@ -125,6 +183,18 @@ export default function EditProduct() {
         stock: Number(stock),
         images: validImages,
         brand: brand.trim() || undefined,
+        highlights,
+        specGroups: JSON.parse(specGroupsJson || "[]"),
+        overview: JSON.parse(overviewJson || "[]"),
+        bankOffers: JSON.parse(bankOffersJson || "[]"),
+        variants: JSON.parse(variantsJson || "[]"),
+        relatedProductIds: relatedProductIdsText.split(",").map((item) => item.trim()).filter(Boolean),
+        warranty: warranty.trim() || undefined,
+        rating: rating ? Number(rating) : undefined,
+        ratingCount: Number(ratingCount || 0),
+        reviewCount: Number(reviewCount || 0),
+        deliveryDate: deliveryDate.trim() || undefined,
+        deliveryFee: deliveryFee.trim() || undefined,
         categoryId,
         isActive,
       });
@@ -333,6 +403,13 @@ export default function EditProduct() {
                     onChange={(e) => handleImageChange(i, e.target.value)}
                     className="flex-1 h-8"
                   />
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    disabled={uploadingImageIndex === i}
+                    onChange={(e) => void handleImageUpload(i, e.target.files?.[0])}
+                    className="max-w-[190px] h-8 text-xs"
+                  />
                   {imageUrls.length > 1 && (
                     <Button
                       variant="ghost"
@@ -346,8 +423,76 @@ export default function EditProduct() {
                 </div>
               ))}
               <Button variant="outline" size="sm" onClick={addImageRow} className="w-fit">
-                <HugeiconsIcon icon={Upload02Icon} size={14} /> Add Image URL
+                <HugeiconsIcon icon={Upload02Icon} size={14} />
+                {uploadingImageIndex !== null ? "Uploading..." : "Add Image"}
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Storefront Detail Content</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="warranty">Warranty</Label>
+                  <Input id="warranty" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="deliveryDate">Delivery Date Text</Label>
+                  <Input id="deliveryDate" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="deliveryFee">Delivery Fee Text</Label>
+                  <Input id="deliveryFee" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="rating">Rating</Label>
+                  <Input id="rating" type="number" min="0" max="5" step="0.1" value={rating} onChange={(e) => setRating(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="ratingCount">Rating Count</Label>
+                  <Input id="ratingCount" type="number" min="0" value={ratingCount} onChange={(e) => setRatingCount(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="reviewCount">Review Count</Label>
+                  <Input id="reviewCount" type="number" min="0" value={reviewCount} onChange={(e) => setReviewCount(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="highlights">Highlights <span className="text-muted-foreground font-normal">(one per line)</span></Label>
+                <Textarea id="highlights" value={highlightsText} onChange={(e) => setHighlightsText(e.target.value)} rows={5} />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="specGroupsJson">Specifications JSON</Label>
+                  <Textarea id="specGroupsJson" value={specGroupsJson} onChange={(e) => setSpecGroupsJson(e.target.value)} rows={7} className={errors.specGroupsJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.specGroupsJson && <p className="text-xs text-destructive">{errors.specGroupsJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="overviewJson">Overview JSON</Label>
+                  <Textarea id="overviewJson" value={overviewJson} onChange={(e) => setOverviewJson(e.target.value)} rows={7} className={errors.overviewJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.overviewJson && <p className="text-xs text-destructive">{errors.overviewJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="bankOffersJson">Bank Offers JSON</Label>
+                  <Textarea id="bankOffersJson" value={bankOffersJson} onChange={(e) => setBankOffersJson(e.target.value)} rows={7} className={errors.bankOffersJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.bankOffersJson && <p className="text-xs text-destructive">{errors.bankOffersJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="variantsJson">Variants JSON</Label>
+                  <Textarea id="variantsJson" value={variantsJson} onChange={(e) => setVariantsJson(e.target.value)} rows={7} className={errors.variantsJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.variantsJson && <p className="text-xs text-destructive">{errors.variantsJson}</p>}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="relatedProductIds">Related Product IDs <span className="text-muted-foreground font-normal">(comma separated)</span></Label>
+                <Input id="relatedProductIds" value={relatedProductIdsText} onChange={(e) => setRelatedProductIdsText(e.target.value)} />
+              </div>
             </CardContent>
           </Card>
         </div>

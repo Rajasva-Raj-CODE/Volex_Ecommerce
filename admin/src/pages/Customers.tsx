@@ -24,10 +24,12 @@ import {
 } from "@/components/ui/table";
 import { ApiError } from "@/lib/api";
 import { listCustomers, type ApiCustomer } from "@/lib/users-api";
+import { PaginationControls } from "@/components/pagination-controls";
 
 type StatusTab = "All" | "Active" | "Inactive";
 
 const STATUS_TABS: StatusTab[] = ["All", "Active", "Inactive"];
+const PAGE_SIZE = 20;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -51,6 +53,8 @@ function getInitials(name: string | null, email: string) {
 export default function Customers() {
   const [customers, setCustomers] = useState<ApiCustomer[]>([]);
   const [totalCustomers, setTotalCustomers] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState<StatusTab>("All");
@@ -61,7 +65,8 @@ export default function Customers() {
         setLoading(true);
         try {
           const data = await listCustomers({
-            limit: 100,
+            page,
+            limit: PAGE_SIZE,
             search: search.trim() || undefined,
             isActive:
               activeStatus === "All"
@@ -70,6 +75,7 @@ export default function Customers() {
           });
           setCustomers(data.users);
           setTotalCustomers(data.pagination.total);
+          setTotalPages(data.pagination.totalPages || 1);
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Failed to load customers");
         } finally {
@@ -79,6 +85,10 @@ export default function Customers() {
     }, 250);
 
     return () => clearTimeout(timeout);
+  }, [search, activeStatus, page]);
+
+  useEffect(() => {
+    setPage(1);
   }, [search, activeStatus]);
 
   const statusCounts = useMemo(() => {
@@ -95,7 +105,8 @@ export default function Customers() {
     setLoading(true);
     try {
       const data = await listCustomers({
-        limit: 100,
+        page,
+        limit: PAGE_SIZE,
         search: search.trim() || undefined,
         isActive:
           activeStatus === "All"
@@ -104,6 +115,7 @@ export default function Customers() {
       });
       setCustomers(data.users);
       setTotalCustomers(data.pagination.total);
+      setTotalPages(data.pagination.totalPages || 1);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to load customers");
     } finally {
@@ -263,6 +275,10 @@ export default function Customers() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+        <PaginationControls page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
       </div>
     </>
   );

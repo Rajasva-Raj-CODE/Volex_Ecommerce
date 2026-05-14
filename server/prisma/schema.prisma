@@ -27,6 +27,13 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -113,20 +120,32 @@ model Category {
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  price       Decimal  @db.Decimal(10, 2)
-  mrp         Decimal? @db.Decimal(10, 2)
-  stock       Int      @default(0)
-  images      String[] // Array of image URLs (Cloudinary / any CDN)
-  brand       String?
-  isActive    Boolean  @default(true)
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  description       String?
+  price             Decimal  @db.Decimal(10, 2)
+  mrp               Decimal? @db.Decimal(10, 2)
+  stock             Int      @default(0)
+  images            String[] // Array of image URLs (Cloudinary / any CDN)
+  brand             String?
+  highlights        Json?
+  specGroups        Json?
+  overview          Json?
+  variants          Json?
+  bankOffers        Json?
+  relatedProductIds String[] @default([])
+  warranty          String?
+  rating            Decimal? @db.Decimal(3, 2)
+  ratingCount       Int      @default(0)
+  reviewCount       Int      @default(0)
+  deliveryDate      String?
+  deliveryFee       String?
+  isActive          Boolean  @default(true)
+  categoryId        String
+  category          Category @relation(fields: [categoryId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   orderItems    OrderItem[]
   cartItems     CartItem[]
@@ -185,19 +204,26 @@ model Address {
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 model Order {
-  id          String      @id @default(cuid())
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2)
-  userId      String
-  addressId   String?
-  user        User        @relation(fields: [userId], references: [id])
-  address     Address?    @relation(fields: [addressId], references: [id])
-  items       OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String        @id @default(cuid())
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentMethod     String        @default("COD")
+  razorpayOrderId   String?
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  totalAmount       Decimal       @db.Decimal(10, 2)
+  userId            String
+  addressId         String?
+  user              User          @relation(fields: [userId], references: [id])
+  address           Address?      @relation(fields: [addressId], references: [id])
+  items             OrderItem[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
+  @@index([paymentStatus])
+  @@index([razorpayOrderId])
 }
 
 model OrderItem {

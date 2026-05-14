@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search02Icon, FolderOpenIcon, Edit02Icon, Trash, Add02Icon, Link02Icon, Package01Icon, CheckmarkCircle02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { Search02Icon, FolderOpenIcon, Edit02Icon, Trash, Add02Icon, Link02Icon, Package01Icon, CheckmarkCircle02Icon, Settings01Icon, Upload02Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,12 +33,17 @@ import {
 } from "@/components/ui/select";
 import {
   listCategoriesFlat,
+  listCategoriesPaginated,
   createCategory,
   updateCategory,
   deleteCategory,
   type ApiCategory,
 } from "@/lib/categories-api";
+import { uploadImage } from "@/lib/uploads-api";
 import { ApiError } from "@/lib/api";
+import { PaginationControls } from "@/components/pagination-controls";
+
+const PAGE_SIZE = 20;
 
 function generateSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -46,6 +51,10 @@ function generateSlug(name: string) {
 
 export default function Categories() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [parentCategories, setParentCategories] = useState<ApiCategory[]>([]);
+  const [totalCategories, setTotalCategories] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -61,32 +70,38 @@ export default function Categories() {
   const [formSortOrder, setFormSortOrder] = useState("0");
   const [formIsActive, setFormIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listCategoriesFlat();
-      setCategories(data);
+      const [result, parents] = await Promise.all([
+        listCategoriesPaginated({ page, limit: PAGE_SIZE, search: search.trim() || undefined }),
+        listCategoriesFlat(),
+      ]);
+      setCategories(result.categories);
+      setTotalCategories(result.pagination.total);
+      setTotalPages(result.pagination.totalPages || 1);
+      setParentCategories(parents);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to load categories");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, search]);
 
   useEffect(() => {
-    void fetchCategories();
+    const timeout = setTimeout(() => void fetchCategories(), 250);
+    return () => clearTimeout(timeout);
   }, [fetchCategories]);
 
-  const filtered = categories.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.slug.includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   // Parent options: top-level categories only (no parentId) — to avoid circular parenting
-  const parentOptions = categories.filter((c) => !c.parentId);
+  const parentOptions = parentCategories.filter((c) => !c.parentId);
 
   function resetForm() {
     setFormName("");
@@ -187,12 +202,26 @@ export default function Categories() {
     setDeletingId(category.id);
     try {
       await deleteCategory(category.id);
-      setCategories((prev) => prev.filter((c) => c.id !== category.id));
+      await fetchCategories();
       toast.success(`Category "${category.name}" deleted`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to delete category");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleCategoryImageUpload(file: File | undefined) {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const image = await uploadImage(file, "categories");
+      setFormImageUrl(image.url);
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   }
 
@@ -237,6 +266,15 @@ export default function Categories() {
             value={formImageUrl}
             onChange={(e) => setFormImageUrl(e.target.value)}
           />
+          <div className="flex items-center gap-2">
+            <Input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              disabled={uploadingImage}
+              onChange={(e) => void handleCategoryImageUpload(e.target.files?.[0])}
+            />
+            <HugeiconsIcon icon={Upload02Icon} size={16} className="text-muted-foreground" />
+          </div>
         </Field>
 
         <Field>
@@ -289,7 +327,7 @@ export default function Categories() {
           <div>
             <h1 className="text-xl font-semibold">Categories</h1>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Loading…" : (search ? `${filtered.length} of ${categories.length} categories` : `${categories.length} categories`)}
+              {loading ? "Loading…" : `${categories.length} of ${totalCategories} categories`}
             </p>
           </div>
         </div>
@@ -375,14 +413,14 @@ export default function Categories() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Loading categories…</TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : categories.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  {categories.length === 0 ? "No categories yet — add your first one." : "No categories match your search."}
+                  No categories match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((category) => (
+              categories.map((category) => (
                 <TableRow key={category.id} className="hover:bg-muted/30 transition-colors">
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -444,6 +482,10 @@ export default function Categories() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+        <PaginationControls page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
       </div>
 
       <Dialog open={editOpen} onOpenChange={handleEditOpenChange}>

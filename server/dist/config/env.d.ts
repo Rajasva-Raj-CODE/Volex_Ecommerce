@@ -13,5 +13,11 @@ export declare const env: {
     ADMIN_SEED_NAME: string;
     CLIENT_URL: string;
     ADMIN_URL: string;
+    SUPABASE_URL: string;
+    SUPABASE_ANON_KEY: string;
+    SUPABASE_SERVICE_ROLE_KEY: string;
+    SUPABASE_STORAGE_BUCKET: string;
+    RAZORPAY_KEY_ID: string;
+    RAZORPAY_KEY_SECRET: string;
 };
 //# sourceMappingURL=env.d.ts.map

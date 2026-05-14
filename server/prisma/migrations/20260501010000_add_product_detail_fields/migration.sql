@@ -1,0 +1,14 @@
+-- AlterTable
+ALTER TABLE "Product"
+ADD COLUMN "highlights" JSONB,
+ADD COLUMN "specGroups" JSONB,
+ADD COLUMN "overview" JSONB,
+ADD COLUMN "variants" JSONB,
+ADD COLUMN "bankOffers" JSONB,
+ADD COLUMN "relatedProductIds" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "warranty" TEXT,
+ADD COLUMN "rating" DECIMAL(3,2),
+ADD COLUMN "ratingCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "reviewCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "deliveryDate" TEXT,
+ADD COLUMN "deliveryFee" TEXT;

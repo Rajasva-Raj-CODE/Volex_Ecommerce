@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { listProducts, deleteProduct, type ApiProduct } from "@/lib/products-api";
 import { ApiError } from "@/lib/api";
+import { PaginationControls } from "@/components/pagination-controls";
 
 function deriveStatus(product: ApiProduct): "Active" | "Low Stock" | "Out of Stock" | "Inactive" {
   if (!product.isActive) return "Inactive";
@@ -39,9 +40,13 @@ const STATUS_STYLES: Record<string, { variant: "default" | "secondary" | "destru
 };
 
 const STATUS_TABS = ["All", "Active", "Low Stock", "Out of Stock", "Inactive"];
+const PAGE_SIZE = 20;
 
 export default function Products() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("All");
@@ -51,35 +56,39 @@ export default function Products() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await listProducts({ limit: 100 });
+      const result = await listProducts({
+        page,
+        limit: PAGE_SIZE,
+        search: search.trim() || undefined,
+        isActive: activeStatus === "Inactive" ? false : activeStatus === "All" ? undefined : true,
+        stockMin: activeStatus === "Active" ? 10 : activeStatus === "Low Stock" ? 1 : undefined,
+        stockMax: activeStatus === "Low Stock" ? 9 : activeStatus === "Out of Stock" ? 0 : undefined,
+      });
       setProducts(result.products);
+      setTotalProducts(result.pagination.total);
+      setTotalPages(result.pagination.totalPages || 1);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to load products");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeStatus, page, search]);
 
   useEffect(() => {
-    void fetchProducts();
+    const timeout = setTimeout(() => void fetchProducts(), 250);
+    return () => clearTimeout(timeout);
   }, [fetchProducts]);
 
-  const filtered = products.filter((p) => {
-    const status = deriveStatus(p);
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.category?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (p.brand ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = activeStatus === "All" || status === activeStatus;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeStatus]);
 
   async function handleDelete(product: ApiProduct) {
     if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
     setDeletingId(product.id);
     try {
       await deleteProduct(product.id);
-      setProducts((prev) => prev.filter((p) => p.id !== product.id));
+      await fetchProducts();
       toast.success(`"${product.name}" deleted`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to delete product");
@@ -98,7 +107,7 @@ export default function Products() {
           <div>
             <h1 className="text-xl font-semibold">Products</h1>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Loading…" : `${filtered.length} of ${products.length} products`}
+              {loading ? "Loading…" : `${products.length} of ${totalProducts} products`}
             </p>
           </div>
         </div>
@@ -118,16 +127,14 @@ export default function Products() {
             className="pl-9 h-9"
           />
         </div>
-        <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={() => void fetchProducts()} disabled={loading}>
           Refresh
         </Button>
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap">
         {STATUS_TABS.map((tab) => {
-          const count = tab === "All"
-            ? products.length
-            : products.filter((p) => deriveStatus(p) === tab).length;
+          const count = tab === activeStatus ? totalProducts : "";
           return (
             <Button
               key={tab}
@@ -137,9 +144,11 @@ export default function Products() {
               className="h-8 gap-1.5 text-xs"
             >
               {tab}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
-                {count}
-              </span>
+              {count !== "" && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activeStatus === tab ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"}`}>
+                  {count}
+                </span>
+              )}
             </Button>
           );
         })}
@@ -189,14 +198,14 @@ export default function Products() {
                   Loading products…
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : products.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  {products.length === 0 ? "No products yet — add your first product." : "No products match your filters."}
+                  No products match your filters.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((product) => {
+              products.map((product) => {
                 const status = deriveStatus(product);
                 return (
                   <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
@@ -275,6 +284,10 @@ export default function Products() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+        <PaginationControls page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
       </div>
     </>
   );

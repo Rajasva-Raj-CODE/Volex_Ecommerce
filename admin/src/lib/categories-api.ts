@@ -24,6 +24,18 @@ export interface CreateCategoryInput {
 
 export type UpdateCategoryInput = Partial<CreateCategoryInput>;
 
+export interface CategoriesListResponse {
+  categories: ApiCategory[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export async function listCategoriesTree() {
   const data = await apiRequest<{ categories: ApiCategory[] }>("/categories");
   return data.categories;
@@ -32,6 +44,15 @@ export async function listCategoriesTree() {
 export async function listCategoriesFlat() {
   const data = await apiRequest<{ categories: ApiCategory[] }>("/categories/flat");
   return data.categories;
+}
+
+export function listCategoriesPaginated(query: { page?: number; limit?: number; search?: string } = {}) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return apiRequest<CategoriesListResponse>(`/categories/admin${qs ? `?${qs}` : ""}`);
 }
 
 export async function createCategory(input: CreateCategoryInput) {
