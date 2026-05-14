@@ -5,6 +5,7 @@ import { prisma } from "../../config/prisma";
 import { env } from "../../config/env";
 import { AppError } from "../../middleware/error.middleware";
 import { placeOrder } from "../orders/orders.service";
+import { validateCoupon } from "../coupons/coupons.service";
 import type { CreateRazorpayOrderInput, VerifyRazorpayPaymentInput } from "./payments.schema";
 
 async function calculateOrderTotal(userId: string, input: CreateRazorpayOrderInput) {
@@ -24,6 +25,12 @@ async function calculateOrderTotal(userId: string, input: CreateRazorpayOrderInp
     }
 
     totalAmount += Number(product.price) * item.quantity;
+  }
+
+  // Apply coupon discount if provided
+  if (input.couponCode) {
+    const couponResult = await validateCoupon(input.couponCode, totalAmount);
+    totalAmount = Math.max(0, totalAmount - couponResult.discountAmount);
   }
 
   return new Prisma.Decimal(totalAmount);
@@ -115,6 +122,7 @@ export async function verifyRazorpayPayment(userId: string, input: VerifyRazorpa
   return placeOrder(userId, {
     addressId: input.addressId,
     items: input.items,
+    couponCode: input.couponCode,
   }, {
     paymentMethod: "RAZORPAY",
     paymentStatus: "PAID",

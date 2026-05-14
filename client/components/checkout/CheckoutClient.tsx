@@ -79,6 +79,9 @@ export default function CheckoutClient() {
   });
   const [savingAddress, setSavingAddress] = useState(false);
 
+  // Coupon
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+
   // Order
   const [placing, setPlacing] = useState(false);
 
@@ -129,6 +132,21 @@ export default function CheckoutClient() {
     if (isReady) void fetchData();
   }, [isReady, fetchData]);
 
+  // Read coupon from sessionStorage (set by CartClient)
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("voltex_coupon");
+      if (stored) {
+        const parsed = JSON.parse(stored) as { code: string; discountAmount: number };
+        if (parsed.code && typeof parsed.discountAmount === "number") {
+          setAppliedCoupon(parsed);
+        }
+      }
+    } catch {
+      // ignore invalid data
+    }
+  }, []);
+
   const handleSaveAddress = async () => {
     if (!addressForm.line1 || !addressForm.city || !addressForm.state || !addressForm.pincode) {
       toast.error("Please fill in all required address fields");
@@ -163,6 +181,7 @@ export default function CheckoutClient() {
           productId: item.productId,
           quantity: item.quantity,
         })),
+        ...(appliedCoupon?.code ? { couponCode: appliedCoupon.code } : {}),
       };
 
       const scriptLoaded = await loadRazorpayScript();
@@ -188,6 +207,7 @@ export default function CheckoutClient() {
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
               });
+              sessionStorage.removeItem("voltex_coupon");
               router.push(`/checkout/success?orderId=${order.id}`);
             } catch (err) {
               const msg = err instanceof ApiError ? err.message : "Payment verified, but order creation failed";
@@ -445,6 +465,13 @@ export default function CheckoutClient() {
               </div>
             )}
 
+            {appliedCoupon && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Coupon ({appliedCoupon.code})</span>
+                <span className="text-emerald-400 font-medium">-{formatPrice(appliedCoupon.discountAmount)}</span>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <span className="text-gray-600">Delivery</span>
               <span className="text-green-600 font-medium">FREE</span>
@@ -454,7 +481,7 @@ export default function CheckoutClient() {
 
             <div className="flex justify-between text-[15px]">
               <span className="font-bold text-gray-900">Total</span>
-              <span className="font-bold text-gray-900">{formatPrice(cart.subtotal)}</span>
+              <span className="font-bold text-gray-900">{formatPrice(cart.subtotal - (appliedCoupon?.discountAmount ?? 0))}</span>
             </div>
           </div>
 

@@ -50,17 +50,24 @@ export async function inviteStaff(input: SendInviteInput, invitedById: string) {
     },
   });
 
-  // Send invite email
-  await sendStaffInviteEmail({
-    toEmail: email,
-    invitedByName: admin?.name ?? "Admin",
-    adminUrl: env.ADMIN_URL,
-  });
+  // Send invite email (non-blocking — invitation is created even if email fails)
+  let emailSent = true;
+  try {
+    await sendStaffInviteEmail({
+      toEmail: email,
+      invitedByName: admin?.name ?? "Admin",
+      adminUrl: env.ADMIN_URL,
+    });
+  } catch (err) {
+    emailSent = false;
+    console.error("Staff invite email failed:", err);
+  }
 
   return {
     id: invitation.id,
     email: invitation.email,
     createdAt: invitation.createdAt,
+    emailSent,
   };
 }
 
@@ -139,7 +146,14 @@ export async function requestOtp(input: RequestOtpInput) {
   });
 
   // Send OTP email
-  await sendOtpEmail({ toEmail: email, otp });
+  try {
+    await sendOtpEmail({ toEmail: email, otp });
+  } catch {
+    throw new AppError(
+      "Could not send OTP email. On the free Resend plan, emails can only be sent to the account owner's email. Verify a domain at resend.com/domains to send to other addresses.",
+      502
+    );
+  }
 
   return { message: "OTP sent to your email" };
 }

@@ -32,6 +32,7 @@ interface AuthContextValue {
   register: (email: string, password: string, name?: string) => Promise<void>;
   continueAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   openLoginModal: () => void;
   closeLoginModal: () => void;
 }
@@ -103,6 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoginModalOpen(false);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentUser = await getCurrentCustomer();
+      setUser(currentUser);
+    } catch {
+      // Ignore — user might have been logged out
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     await logoutCustomer();
     setUser(null);
@@ -122,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         continueAsGuest,
         logout,
+        refreshUser,
         openLoginModal,
         closeLoginModal,
       }}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Settings01Icon,
@@ -22,6 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { changePassword } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { toast } from "sonner";
 
 const SETTINGS_SECTIONS = [
   { id: "store-info", title: "General Settings", description: "Basic store configuration", icon: Settings01Icon, color: "text-blue-500 bg-blue-50" },
@@ -36,6 +39,42 @@ export default function Settings() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const currentPwRef = useRef<HTMLInputElement>(null);
+  const newPwRef = useRef<HTMLInputElement>(null);
+  const confirmPwRef = useRef<HTMLInputElement>(null);
+
+  const handleUpdatePassword = async () => {
+    const current = currentPwRef.current?.value ?? "";
+    const newPw = newPwRef.current?.value ?? "";
+    const confirm = confirmPwRef.current?.value ?? "";
+
+    if (!current || !newPw || !confirm) {
+      toast.error("All password fields are required");
+      return;
+    }
+    if (newPw !== confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (newPw.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      await changePassword(current, newPw);
+      if (currentPwRef.current) currentPwRef.current.value = "";
+      if (newPwRef.current) newPwRef.current.value = "";
+      if (confirmPwRef.current) confirmPwRef.current.value = "";
+      toast.success("Password updated successfully");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to update password");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -178,6 +217,7 @@ export default function Settings() {
                 <div className="relative">
                   <Input
                     id="current-password"
+                    ref={currentPwRef}
                     type={showCurrent ? "text" : "password"}
                     placeholder="Enter current password"
                     className="h-10 pr-10"
@@ -196,6 +236,7 @@ export default function Settings() {
                 <div className="relative">
                   <Input
                     id="new-password"
+                    ref={newPwRef}
                     type={showNew ? "text" : "password"}
                     placeholder="Enter new password"
                     className="h-10 pr-10"
@@ -214,6 +255,7 @@ export default function Settings() {
                 <div className="relative">
                   <Input
                     id="confirm-password"
+                    ref={confirmPwRef}
                     type={showConfirm ? "text" : "password"}
                     placeholder="Confirm new password"
                     className="h-10 pr-10"
@@ -227,7 +269,9 @@ export default function Settings() {
                   </button>
                 </div>
               </div>
-              <Button variant="outline" className="w-fit">Update Password</Button>
+              <Button variant="outline" className="w-fit" onClick={handleUpdatePassword} disabled={updatingPassword}>
+                {updatingPassword ? "Updating..." : "Update Password"}
+              </Button>
             </div>
           </div>
 

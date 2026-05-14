@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../middleware/error.middleware";
+import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "../../services/email.service";
+import { validateCoupon } from "../coupons/coupons.service";
 import type { PlaceOrderInput, UpdateOrderStatusInput, OrderQueryInput } from "./orders.schema";
 
 interface PaymentDetails {
@@ -44,6 +46,14 @@ export async function placeOrder(userId: string, input: PlaceOrderInput, payment
     orderItems.push({ productId: item.productId, quantity: item.quantity, price: product.price });
   }
 
+  // Apply coupon discount if provided
+  let discountAmount: number | undefined;
+  if (input.couponCode) {
+    const couponResult = await validateCoupon(input.couponCode, totalAmount);
+    discountAmount = couponResult.discountAmount;
+    totalAmount = Math.max(0, totalAmount - discountAmount);
+  }
+
   // Create order + items + decrement stock in a transaction
   const order = await prisma.$transaction(
     async (tx) => {
@@ -52,6 +62,8 @@ export async function placeOrder(userId: string, input: PlaceOrderInput, payment
           userId,
           addressId: input.addressId,
           totalAmount,
+          couponCode: input.couponCode?.toUpperCase(),
+          discountAmount: discountAmount ?? undefined,
           paymentMethod: payment?.paymentMethod ?? "COD",
           paymentStatus: payment?.paymentStatus ?? "PENDING",
           razorpayOrderId: payment?.razorpayOrderId,
@@ -87,10 +99,48 @@ export async function placeOrder(userId: string, input: PlaceOrderInput, payment
         where: { userId, productId: { in: orderedProductIds } },
       });
 
+      // Increment coupon usage count
+      if (input.couponCode) {
+        await tx.coupon.update({
+          where: { code: input.couponCode.toUpperCase() },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
       return newOrder;
     },
     { timeout: 15_000 }
   );
+
+  // Fire-and-forget order confirmation email
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+    if (user && order.address) {
+      await sendOrderConfirmationEmail({
+        toEmail: user.email,
+        toName: user.name,
+        orderId: order.id,
+        items: order.items.map((i) => ({
+          name: i.product.name,
+          quantity: i.quantity,
+          price: Number(i.price),
+        })),
+        totalAmount: Number(order.totalAmount),
+        paymentMethod: order.paymentMethod,
+        address: {
+          line1: order.address.line1,
+          city: order.address.city,
+          state: order.address.state,
+          pincode: order.address.pincode,
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Order confirmation email failed:", err);
+  }
 
   return order;
 }
@@ -162,9 +212,29 @@ export async function updateOrderStatus(orderId: string, input: UpdateOrderStatu
     throw new AppError(`Cannot update a ${order.status.toLowerCase()} order`, 400);
   }
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: { status: input.status },
     include: ORDER_INCLUDE,
   });
+
+  // Fire-and-forget status update email
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: order.userId },
+      select: { email: true, name: true },
+    });
+    if (user) {
+      await sendOrderStatusUpdateEmail({
+        toEmail: user.email,
+        toName: user.name,
+        orderId: order.id,
+        newStatus: input.status,
+      });
+    }
+  } catch (err) {
+    console.error("Order status update email failed:", err);
+  }
+
+  return updated;
 }

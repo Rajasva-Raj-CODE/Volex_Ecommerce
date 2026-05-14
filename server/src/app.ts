@@ -19,6 +19,8 @@ import userRoutes from "./modules/users/users.routes";
 import uploadRoutes from "./modules/uploads/uploads.routes";
 import paymentRoutes from "./modules/payments/payments.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import couponRoutes from "./modules/coupons/coupons.routes";
+import reviewRoutes from "./modules/reviews/reviews.routes";
 
 const app = express();
 
@@ -63,6 +65,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/coupons", couponRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

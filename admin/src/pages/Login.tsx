@@ -14,7 +14,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { ZapIcon } from "lucide-react";
 import { requestOtp, verifyOtp } from "@/lib/invitations-api";
+import { forgotPassword, resetPassword } from "@/lib/auth-api";
 import { ApiError, setStoredAuthTokens } from "@/lib/api";
+import { toast } from "sonner";
 
 const METRICS = [
   { value: "₹12.4L", label: "Revenue",   sub: "+12.5% this month" },
@@ -35,6 +37,47 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd]   = useState(false);
   const [adminError, setAdminError] = useState("");
+
+  // Forgot password
+  const [adminView, setAdminView] = useState<"login" | "forgot" | "reset">("login");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+
+  const submitForgot = async (e: FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    setResetLoading(true);
+    try {
+      await forgotPassword(resetEmail);
+      setAdminView("reset");
+      toast.success("Reset code sent to your email");
+    } catch (err) {
+      setResetError(err instanceof ApiError ? err.message : "Failed to send reset code");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const submitReset = async (e: FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    if (newPassword !== confirmPw) { setResetError("Passwords do not match"); return; }
+    setResetLoading(true);
+    try {
+      await resetPassword(resetEmail, resetOtp, newPassword);
+      toast.success("Password reset successfully! Please sign in.");
+      setAdminView("login");
+      setResetEmail(""); setResetOtp(""); setNewPassword(""); setConfirmPw("");
+    } catch (err) {
+      setResetError(err instanceof ApiError ? err.message : "Failed to reset password");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Staff OTP form
   const [staffEmail, setStaffEmail]   = useState("");
@@ -175,7 +218,7 @@ export default function Login() {
           </div>
 
           {/* Admin login form */}
-          {tab === "admin" && (
+          {tab === "admin" && adminView === "login" && (
             <form onSubmit={submitAdmin} className="space-y-4">
               {adminError && (
                 <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">
@@ -217,12 +260,73 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="text-right -mt-1">
+                <button type="button" onClick={() => { setAdminView("forgot"); setResetError(""); setResetEmail(email); }}
+                  className="text-xs text-primary hover:underline">Forgot password?</button>
+              </div>
+
               <Button type="submit"
                 disabled={isLoggingIn}
                 className="h-11 w-full rounded-xl font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                 {isLoggingIn ? "Signing in…" : "Continue"}
                 <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
               </Button>
+            </form>
+          )}
+
+          {/* Admin forgot password */}
+          {tab === "admin" && adminView === "forgot" && (
+            <form onSubmit={submitForgot} className="space-y-4">
+              <p className="text-sm text-white/50">Enter your email to receive a password reset code.</p>
+              {resetError && (
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">{resetError}</p>
+              )}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Email</label>
+                <div className="relative">
+                  <HugeiconsIcon icon={Mail01Icon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                  <Input type="email" value={resetEmail} required onChange={e => setResetEmail(e.target.value)} placeholder="admin@voltex.com"
+                    className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
+                </div>
+              </div>
+              <Button type="submit" disabled={resetLoading} className="h-11 w-full rounded-xl font-semibold bg-primary text-primary-foreground">
+                {resetLoading ? "Sending…" : "Send Reset Code"}
+              </Button>
+              <button type="button" onClick={() => { setAdminView("login"); setResetError(""); }} className="w-full text-center text-xs text-white/30 hover:text-white/50">
+                ← Back to sign in
+              </button>
+            </form>
+          )}
+
+          {/* Admin reset password */}
+          {tab === "admin" && adminView === "reset" && (
+            <form onSubmit={submitReset} className="space-y-4">
+              <p className="text-sm text-white/50">Enter the code sent to <span className="text-white/80">{resetEmail}</span></p>
+              {resetError && (
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5 text-xs text-red-400">{resetError}</p>
+              )}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Reset Code</label>
+                <Input type="text" inputMode="numeric" maxLength={6} value={resetOtp} required
+                  onChange={e => setResetOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000"
+                  className="h-11 rounded-xl border-white/8 bg-white/4 text-center text-xl tracking-[0.5em] font-bold text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">New Password</label>
+                <Input type="password" value={newPassword} required minLength={8} onChange={e => setNewPassword(e.target.value)} placeholder="Min. 8 characters"
+                  className="h-11 rounded-xl border-white/8 bg-white/4 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Confirm Password</label>
+                <Input type="password" value={confirmPw} required minLength={8} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
+                  className="h-11 rounded-xl border-white/8 bg-white/4 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
+              </div>
+              <Button type="submit" disabled={resetLoading || resetOtp.length < 6} className="h-11 w-full rounded-xl font-semibold bg-primary text-primary-foreground">
+                {resetLoading ? "Resetting…" : "Reset Password"}
+              </Button>
+              <button type="button" onClick={() => { setAdminView("forgot"); setResetError(""); setResetOtp(""); }} className="w-full text-center text-xs text-white/30 hover:text-white/50">
+                Resend code
+              </button>
             </form>
           )}
 

@@ -109,9 +109,10 @@ export default function OrdersClient() {
                     const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
 
                     return (
-                        <div
+                        <Link
+                            href={`/orders/${order.id}`}
                             key={order.id}
-                            className="rounded-xl border border-white/[0.08] bg-[#1a1a1a]/60 p-5 hover:border-white/[0.14] transition-all duration-200 cursor-pointer group"
+                            className="block rounded-xl border border-white/[0.08] bg-[#1a1a1a]/60 p-5 hover:border-white/[0.14] transition-all duration-200 cursor-pointer group"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex items-start gap-4">
@@ -148,7 +149,7 @@ export default function OrdersClient() {
                                     </p>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>

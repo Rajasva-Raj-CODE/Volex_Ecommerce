@@ -12,14 +12,18 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons";
 import { useAuth, ApiError } from "@/contexts/AuthContext";
+import { forgotPassword, resetPassword } from "@/lib/auth-api";
+import { toast } from "sonner";
 
 type Tab = "login" | "register";
+type View = "auth" | "forgot" | "reset";
 
 export default function LoginClient() {
   const router = useRouter();
   const { login, register, continueAsGuest } = useAuth();
 
   const [tab, setTab] = useState<Tab>("login");
+  const [view, setView] = useState<View>("auth");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,11 +32,56 @@ export default function LoginClient() {
   const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Forgot password state
+  const [resetEmail, setResetEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+
   function switchTab(t: Tab) {
     setTab(t);
     setError("");
     setPassword("");
   }
+
+  const handleForgotSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setResetLoading(true);
+    try {
+      await forgotPassword(resetEmail);
+      setView("reset");
+      toast.success("Reset code sent to your email");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to send reset code");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await resetPassword(resetEmail, otp, newPassword);
+      toast.success("Password reset successfully! Please sign in.");
+      setView("auth");
+      setResetEmail("");
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to reset password");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -77,6 +126,75 @@ export default function LoginClient() {
 
           <div className="p-7 sm:p-9">
 
+            {/* ── Forgot Password View ── */}
+            {view === "forgot" && (
+              <>
+                <div className="mb-6 text-center">
+                  <h2 className="text-white text-[17px] font-semibold mb-1">Forgot your password?</h2>
+                  <p className="text-white/45 text-[13px]">Enter your email and we&apos;ll send you a reset code</p>
+                </div>
+                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  {error && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-xs text-red-400">{error}</div>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Email</label>
+                    <div className="relative">
+                      <HugeiconsIcon icon={Mail01Icon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                      <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required placeholder="you@example.com" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={resetLoading} className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_6px_24px_rgba(73,165,162,0.35)] disabled:opacity-50 cursor-pointer">
+                    {resetLoading ? "Sending…" : "Send Reset Code"}
+                  </button>
+                </form>
+                <button type="button" onClick={() => { setView("auth"); setError(""); }} className="w-full mt-4 text-[#49A5A2] text-[13px] font-medium hover:underline cursor-pointer">
+                  Back to Sign In
+                </button>
+              </>
+            )}
+
+            {/* ── Reset Password View ── */}
+            {view === "reset" && (
+              <>
+                <div className="mb-6 text-center">
+                  <h2 className="text-white text-[17px] font-semibold mb-1">Reset your password</h2>
+                  <p className="text-white/45 text-[13px]">Enter the code sent to <span className="text-white/70">{resetEmail}</span></p>
+                </div>
+                <form onSubmit={handleResetSubmit} className="space-y-4">
+                  {error && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-xs text-red-400">{error}</div>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Reset Code</label>
+                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} required placeholder="6-digit code" maxLength={6} className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[20px] font-mono text-center tracking-[0.3em] placeholder:text-white/25 placeholder:text-[14px] placeholder:tracking-normal px-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">New Password</label>
+                    <div className="relative">
+                      <HugeiconsIcon icon={LockPasswordIcon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Min. 8 characters" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Confirm Password</label>
+                    <div className="relative">
+                      <HugeiconsIcon icon={LockPasswordIcon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Confirm new password" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={resetLoading || otp.length !== 6} className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_6px_24px_rgba(73,165,162,0.35)] disabled:opacity-50 cursor-pointer">
+                    {resetLoading ? "Resetting…" : "Reset Password"}
+                  </button>
+                </form>
+                <button type="button" onClick={() => { setView("forgot"); setError(""); setOtp(""); }} className="w-full mt-4 text-[#49A5A2] text-[13px] font-medium hover:underline cursor-pointer">
+                  Resend code
+                </button>
+              </>
+            )}
+
+            {/* ── Login / Register View ── */}
+            {view === "auth" && (<>
             {/* ── Tab Toggle ── */}
             <div className="relative flex items-center rounded-lg border border-white/[0.1] bg-white/[0.03] p-1 mb-8">
               <div
@@ -192,6 +310,18 @@ export default function LoginClient() {
                 </div>
               </div>
 
+              {tab === "login" && (
+                <div className="text-right -mt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setView("forgot"); setError(""); setResetEmail(email); }}
+                    className="text-[#49A5A2] text-[12px] font-medium hover:underline cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading || guestLoading}
@@ -219,6 +349,7 @@ export default function LoginClient() {
               {" & "}
               <Link href="/privacy" className="text-[#49A5A2] hover:underline">Privacy Policy</Link>
             </p>
+            </>)}
           </div>
         </div>
 

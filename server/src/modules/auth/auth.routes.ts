@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validate } from "../../middleware/validate.middleware";
 import { requireAuth } from "../../middleware/auth.middleware";
 import { authLimiter } from "../../middleware/rateLimiter";
-import { adminLoginSchema, refreshTokenSchema, customerRegisterSchema, customerLoginSchema } from "./auth.schema";
+import { adminLoginSchema, refreshTokenSchema, customerRegisterSchema, customerLoginSchema, forgotPasswordSchema, resetPasswordSchema } from "./auth.schema";
 import * as controller from "./auth.controller";
 import type { AuthRequest } from "../../middleware/auth.middleware";
 import type { RequestHandler } from "express";
@@ -51,6 +51,22 @@ router.post(
   authLimiter,
   validate(customerLoginSchema),
   controller.customerLogin
+);
+
+// POST /api/auth/forgot-password — Request password reset OTP
+router.post(
+  "/forgot-password",
+  authLimiter,
+  validate(forgotPasswordSchema),
+  controller.forgotPassword
+);
+
+// POST /api/auth/reset-password — Reset password with OTP
+router.post(
+  "/reset-password",
+  authLimiter,
+  validate(resetPasswordSchema),
+  controller.resetPassword
 );
 
 export default router;

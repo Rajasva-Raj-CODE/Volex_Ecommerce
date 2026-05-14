@@ -11,6 +11,8 @@ import {
   Settings01Icon,
   MoreVerticalIcon,
   Logout01Icon,
+  PercentCircleIcon,
+  StarIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Avatar,
@@ -48,6 +50,8 @@ const NAV_ITEMS: { title: string; url: string; icon: typeof DashboardBrowsingIco
   { title: "Products", url: "/products", icon: Package01Icon, roles: ["ADMIN", "STAFF"] },
   { title: "Categories", url: "/categories", icon: FolderIcon, roles: ["ADMIN", "STAFF"] },
   { title: "Orders", url: "/orders", icon: ShoppingBag01Icon, roles: ["ADMIN"] },
+  { title: "Coupons", url: "/coupons", icon: PercentCircleIcon, roles: ["ADMIN"] },
+  { title: "Reviews", url: "/reviews", icon: StarIcon, roles: ["ADMIN"] },
   { title: "Customers", url: "/customers", icon: UserIcon, roles: ["ADMIN"] },
   { title: "Team", url: "/team", icon: UserSettings01Icon, roles: ["ADMIN"] },
   { title: "Settings", url: "/settings", icon: Settings01Icon, roles: ["ADMIN"] },

@@ -107,6 +107,8 @@ export interface ApiCustomer {
   id: string;
   email: string;
   name: string | null;
+  phone: string | null;
+  avatar: string | null;
   role: string;
   createdAt: string;
 }
@@ -114,4 +116,48 @@ export interface ApiCustomer {
 export async function getCurrentCustomer(): Promise<ApiCustomer> {
   const result = await authedApiRequest<{ user: ApiCustomer }>("/auth/me");
   return result.user;
+}
+
+// ─── Profile endpoints ───────────────────────────────────────────────────────
+
+export async function updateProfile(data: {
+  name?: string;
+  phone?: string;
+  avatar?: string;
+}): Promise<ApiCustomer> {
+  const result = await authedApiRequest<{ user: ApiCustomer }>("/users/profile", {
+    method: "PUT",
+    json: data,
+  });
+  return result.user;
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await authedApiRequest("/users/change-password", {
+    method: "PUT",
+    json: { currentPassword, newPassword },
+  });
+}
+
+// ─── Forgot password endpoints ───────────────────────────────────────────────
+
+export async function forgotPassword(email: string): Promise<void> {
+  await apiRequest("/auth/forgot-password", {
+    method: "POST",
+    json: { email },
+  });
+}
+
+export async function resetPassword(
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<void> {
+  await apiRequest("/auth/reset-password", {
+    method: "POST",
+    json: { email, otp, newPassword },
+  });
 }

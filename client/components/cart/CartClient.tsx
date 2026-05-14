@@ -21,6 +21,7 @@ import {
 import { addToWishlist } from "@/lib/wishlist-api";
 import { ApiError } from "@/lib/api";
 import { notifyCartUpdated } from "@/lib/cart-events";
+import CouponModal from "./CouponModal";
 
 function formatPrice(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN", { minimumFractionDigits: 2 });
@@ -33,6 +34,8 @@ export default function CartClient() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
 
   const fetchCart = useCallback(async () => {
     if (!isLoggedIn) { setLoading(false); return; }
@@ -174,13 +177,45 @@ export default function CartClient() {
       {/* Left: Cart Items */}
       <div className="flex-1 space-y-4">
         {/* Apply Coupon */}
-        <button className="w-full flex items-center justify-between bg-white rounded-xl px-5 py-4 border border-gray-100 hover:border-gray-200 transition-colors group cursor-pointer">
+        <button
+          onClick={() => setCouponModalOpen(true)}
+          className="w-full flex items-center justify-between bg-white rounded-xl px-5 py-4 border border-gray-100 hover:border-gray-200 transition-colors group cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <HugeiconsIcon icon={PercentCircleIcon} size={22} className="text-gray-700" />
             <span className="text-[15px] font-bold text-gray-900">Apply Coupon</span>
           </div>
           <HugeiconsIcon icon={ArrowRight01Icon} size={20} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
         </button>
+
+        {appliedCoupon && (
+          <div className="flex items-center justify-between bg-emerald-50 rounded-xl px-5 py-3 border border-emerald-200">
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon icon={PercentCircleIcon} size={18} className="text-emerald-600" />
+              <span className="text-[13px] font-semibold text-emerald-700">{appliedCoupon.code} applied</span>
+              <span className="text-[12px] text-emerald-600">(-{formatPrice(appliedCoupon.discountAmount)})</span>
+            </div>
+            <button
+              onClick={() => {
+                setAppliedCoupon(null);
+                sessionStorage.removeItem("voltex_coupon");
+              }}
+              className="text-[12px] font-semibold text-red-500 hover:text-red-600 hover:underline cursor-pointer"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
+        <CouponModal
+          open={couponModalOpen}
+          onOpenChange={setCouponModalOpen}
+          subtotal={subtotal}
+          onApply={(c) => {
+            setAppliedCoupon(c);
+            sessionStorage.setItem("voltex_coupon", JSON.stringify(c));
+          }}
+        />
 
         {items.map((item) => {
           const price = Number(item.product.price);
@@ -293,6 +328,13 @@ export default function CartClient() {
               </div>
             )}
 
+            {appliedCoupon && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Coupon ({appliedCoupon.code})</span>
+                <span className="text-emerald-400 font-medium">-{formatPrice(appliedCoupon.discountAmount)}</span>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <span className="text-gray-600">Delivery</span>
               <span className="text-green-600 font-medium">FREE</span>
@@ -302,7 +344,7 @@ export default function CartClient() {
 
             <div className="flex justify-between text-[15px]">
               <span className="font-bold text-gray-900">Total</span>
-              <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
+              <span className="font-bold text-gray-900">{formatPrice(subtotal - (appliedCoupon?.discountAmount ?? 0))}</span>
             </div>
           </div>
 

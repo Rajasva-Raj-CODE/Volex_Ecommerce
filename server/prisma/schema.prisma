@@ -17,6 +17,12 @@ enum Role {
 
 enum OtpPurpose {
   STAFF_LOGIN
+  RESET_PASSWORD
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
 }
 
 enum OrderStatus {
@@ -41,6 +47,8 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String?  // Only ADMIN has this. STAFF logs in via OTP.
+  phone        String?
+  avatar       String?
   role         Role     @default(STAFF)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -52,6 +60,7 @@ model User {
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
   addresses       Address[]
+  reviews         Review[]
 
   @@index([email])
 }
@@ -150,6 +159,7 @@ model Product {
   orderItems    OrderItem[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
 
   @@index([slug])
   @@index([categoryId])
@@ -212,6 +222,8 @@ model Order {
   razorpayPaymentId String?       @unique
   razorpaySignature String?
   totalAmount       Decimal       @db.Decimal(10, 2)
+  couponCode        String?
+  discountAmount    Decimal?      @db.Decimal(10, 2)
   userId            String
   addressId         String?
   user              User          @relation(fields: [userId], references: [id])
@@ -236,4 +248,43 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
+}
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+
+model Coupon {
+  id                String       @id @default(cuid())
+  code              String       @unique
+  discountType      DiscountType
+  discountValue     Decimal      @db.Decimal(10, 2)
+  minOrderAmount    Decimal?     @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?     @db.Decimal(10, 2)
+  usageLimit        Int?
+  usedCount         Int          @default(0)
+  expiresAt         DateTime?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([code])
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int      // 1-5 stars
+  title      String?
+  comment    String
+  isApproved Boolean  @default(false)
+  userId     String
+  productId  String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
 }

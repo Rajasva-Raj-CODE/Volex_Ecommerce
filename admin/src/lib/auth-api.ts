@@ -40,3 +40,28 @@ export async function logoutAdmin() {
     clearStoredAuthTokens();
   }
 }
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  await apiRequest("/users/change-password", {
+    method: "PUT",
+    json: { currentPassword, newPassword },
+  });
+}
+
+export async function forgotPassword(email: string) {
+  await apiRequest("/auth/forgot-password", {
+    method: "POST",
+    auth: false,
+    retryOnAuthFailure: false,
+    json: { email },
+  });
+}
+
+export async function resetPassword(email: string, otp: string, newPassword: string) {
+  await apiRequest("/auth/reset-password", {
+    method: "POST",
+    auth: false,
+    retryOnAuthFailure: false,
+    json: { email, otp, newPassword },
+  });
+}

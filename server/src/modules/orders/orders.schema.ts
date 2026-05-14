@@ -10,6 +10,7 @@ export const placeOrderSchema = z.object({
       })
     )
     .min(1, "Order must have at least one item"),
+  couponCode: z.string().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({

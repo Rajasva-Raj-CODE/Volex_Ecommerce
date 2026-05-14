@@ -166,3 +166,164 @@ export async function sendOtpEmail(params: {
     html: emailWrapper(content),
   });
 }
+
+// ─── Email: Password Reset ───────────────────────────────────────────────────
+
+export async function sendPasswordResetEmail(params: {
+  toEmail: string;
+  otp: string;
+}): Promise<void> {
+  const { toEmail, otp } = params;
+  const formattedOtp = `${otp.slice(0, 3)} ${otp.slice(3)}`;
+
+  const content = `
+    <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px;font-weight:700;">Reset your password</h2>
+    <p style="margin:0 0 32px;color:#888;font-size:14px;line-height:1.6;">
+      Use the code below to reset your VolteX account password.
+      This code expires in <strong style="color:#ccc;">15 minutes</strong>.
+    </p>
+
+    <!-- OTP Box -->
+    <div style="background-color:#0d2e20;border:1px solid #2d7a5a;border-radius:10px;padding:28px;text-align:center;margin-bottom:28px;">
+      <p style="margin:0 0 6px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:2px;">Reset code</p>
+      <p style="margin:0;color:#ffffff;font-size:40px;font-weight:900;letter-spacing:8px;font-family:'Courier New',monospace;">${formattedOtp}</p>
+    </div>
+
+    <p style="margin:0;color:#555;font-size:13px;line-height:1.6;">
+      If you didn't request a password reset, you can safely ignore this email.
+    </p>
+  `;
+
+  await sendEmail({
+    from: env.EMAIL_FROM,
+    to: toEmail,
+    subject: `${otp} — Reset your VolteX password`,
+    html: emailWrapper(content),
+  });
+}
+
+// ─── Email: Order Confirmation ───────────────────────────────────────────────
+
+export async function sendOrderConfirmationEmail(params: {
+  toEmail: string;
+  toName: string | null;
+  orderId: string;
+  items: Array<{ name: string; quantity: number; price: number }>;
+  totalAmount: number;
+  paymentMethod: string;
+  address: { line1: string; city: string; state: string; pincode: string };
+}): Promise<void> {
+  const { toEmail, toName, orderId, items, totalAmount, paymentMethod, address } = params;
+  const displayName = toName || "there";
+  const shortId = orderId.slice(0, 8).toUpperCase();
+
+  const itemRows = items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2a2a;color:#ccc;font-size:14px;">${item.name}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2a2a;color:#888;font-size:14px;text-align:center;">x${item.quantity}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2a2a;color:#ccc;font-size:14px;text-align:right;">₹${(item.price * item.quantity).toLocaleString("en-IN")}</td>
+      </tr>`
+    )
+    .join("");
+
+  const content = `
+    <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px;font-weight:700;">Order Confirmed!</h2>
+    <p style="margin:0 0 24px;color:#888;font-size:14px;line-height:1.6;">
+      Hi <strong style="color:#ccc;">${displayName}</strong>, your order <strong style="color:#ccc;">#${shortId}</strong> has been placed successfully.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding-bottom:8px;border-bottom:1px solid #2a2a2a;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Item</th>
+          <th style="text-align:center;padding-bottom:8px;border-bottom:1px solid #2a2a2a;color:#666;font-size:11px;text-transform:uppercase;">Qty</th>
+          <th style="text-align:right;padding-bottom:8px;border-bottom:1px solid #2a2a2a;color:#666;font-size:11px;text-transform:uppercase;">Price</th>
+        </tr>
+      </thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+
+    <div style="background-color:#0d2e20;border:1px solid #2d7a5a;border-radius:10px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="color:#888;font-size:14px;">Total</td>
+          <td style="color:#ffffff;font-size:20px;font-weight:700;text-align:right;">₹${totalAmount.toLocaleString("en-IN")}</td>
+        </tr>
+        <tr>
+          <td style="color:#666;font-size:12px;padding-top:8px;">Payment</td>
+          <td style="color:#888;font-size:12px;padding-top:8px;text-align:right;">${paymentMethod === "COD" ? "Cash on Delivery" : "Paid via Razorpay"}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <p style="margin:0 0 4px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Delivery Address</p>
+      <p style="margin:0;color:#ccc;font-size:14px;line-height:1.5;">
+        ${address.line1}<br/>
+        ${address.city}, ${address.state} — ${address.pincode}
+      </p>
+    </div>
+
+    <a href="${env.CLIENT_URL}/orders/${orderId}"
+       style="display:inline-block;background-color:#2d7a5a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+      View Order →
+    </a>
+  `;
+
+  await sendEmail({
+    from: env.EMAIL_FROM,
+    to: toEmail,
+    subject: `Order Confirmed — #${shortId}`,
+    html: emailWrapper(content),
+  });
+}
+
+// ─── Email: Order Status Update ──────────────────────────────────────────────
+
+export async function sendOrderStatusUpdateEmail(params: {
+  toEmail: string;
+  toName: string | null;
+  orderId: string;
+  newStatus: string;
+}): Promise<void> {
+  const { toEmail, toName, orderId, newStatus } = params;
+  const displayName = toName || "there";
+  const shortId = orderId.slice(0, 8).toUpperCase();
+
+  const statusMessages: Record<string, string> = {
+    CONFIRMED: "Your order has been confirmed and is being prepared.",
+    SHIPPED: "Your order is on its way!",
+    DELIVERED: "Your order has been delivered. Enjoy!",
+    CANCELLED: "Your order has been cancelled.",
+  };
+
+  const content = `
+    <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px;font-weight:700;">Order Update</h2>
+    <p style="margin:0 0 24px;color:#888;font-size:14px;line-height:1.6;">
+      Hi <strong style="color:#ccc;">${displayName}</strong>, your order <strong style="color:#ccc;">#${shortId}</strong> status has been updated.
+    </p>
+
+    <div style="background-color:#0d2e20;border:1px solid #2d7a5a;border-radius:10px;padding:24px;text-align:center;margin-bottom:24px;">
+      <p style="margin:0 0 6px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:2px;">New Status</p>
+      <p style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">${newStatus}</p>
+    </div>
+
+    <p style="margin:0 0 24px;color:#888;font-size:14px;">
+      ${statusMessages[newStatus] || "Your order status has changed."}
+    </p>
+
+    <a href="${env.CLIENT_URL}/orders/${orderId}"
+       style="display:inline-block;background-color:#2d7a5a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+      View Order →
+    </a>
+  `;
+
+  await sendEmail({
+    from: env.EMAIL_FROM,
+    to: toEmail,
+    subject: `Order #${shortId} — ${newStatus}`,
+    html: emailWrapper(content),
+  });
+}

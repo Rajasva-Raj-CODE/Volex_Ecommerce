@@ -9,6 +9,7 @@ import ProductInfo from "@/components/product/ProductInfo";
 import ProductSpecifications from "@/components/product/ProductSpecifications";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import StickyBottomBar from "@/components/product/StickyBottomBar";
+import ReviewSection from "@/components/product/ReviewSection";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -106,6 +107,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               overview={product.overview}
             />
           </div>
+
+          {/* Ratings & Reviews — only for real API products (UUID ids) */}
+          {product.id && product.id.length > 10 && (
+            <ReviewSection productId={product.id} />
+          )}
 
           {/* Related Products */}
           <RelatedProducts products={relatedProducts} />

@@ -12,6 +12,8 @@ import Orders from "@/pages/Orders";
 import Customers from "@/pages/Customers";
 import Team from "@/pages/Team";
 import Settings from "@/pages/Settings";
+import Coupons from "@/pages/Coupons";
+import Reviews from "@/pages/Reviews";
 
 export default function App() {
   return (
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="categories" element={<Categories />} />
           <Route element={<RequireRole allowed={["ADMIN"]} />}>
             <Route path="orders" element={<Orders />} />
+            <Route path="coupons" element={<Coupons />} />
+            <Route path="reviews" element={<Reviews />} />
             <Route path="customers" element={<Customers />} />
             <Route path="team" element={<Team />} />
             <Route path="settings" element={<Settings />} />

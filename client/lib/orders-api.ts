@@ -37,6 +37,8 @@ export interface CustomerOrder {
   razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
   totalAmount: string;
+  couponCode?: string | null;
+  discountAmount?: string | null;
   createdAt: string;
   updatedAt: string;
   address: OrderAddress | null;
@@ -74,6 +76,7 @@ export async function getOrderById(id: string): Promise<CustomerOrder> {
 export interface CreateOrderInput {
   addressId: string;
   items: { productId: string; quantity: number }[];
+  couponCode?: string;
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<CustomerOrder> {

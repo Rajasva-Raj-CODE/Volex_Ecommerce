@@ -59,3 +59,21 @@ export async function customerLogin(req: Request, res: Response, next: NextFunct
     next(err);
   }
 }
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await authService.forgotPassword(req.body);
+    success(res, null, "If an account exists with that email, a reset code has been sent");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await authService.resetPassword(req.body);
+    success(res, null, "Password has been reset successfully");
+  } catch (err) {
+    next(err);
+  }
+}
