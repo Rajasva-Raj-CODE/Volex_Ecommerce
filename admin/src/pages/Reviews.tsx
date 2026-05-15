@@ -22,12 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -434,15 +428,17 @@ export default function Reviews() {
                       )}
 
                       <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                            disabled={actionId === review.id}
-                          >
-                            <HugeiconsIcon icon={Delete02Icon} size={14} />
-                          </Button>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                              disabled={actionId === review.id}
+                            />
+                          }
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={14} />
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
