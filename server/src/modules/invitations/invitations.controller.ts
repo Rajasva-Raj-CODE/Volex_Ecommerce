@@ -25,7 +25,7 @@ export async function revokeInvitation(req: AuthRequest, res: Response, next: Ne
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     await service.revokeInvitation(id);
-    success(res, null, "Invitation revoked");
+    success(res, null, "Team member removed");
   } catch (err) {
     next(err);
   }

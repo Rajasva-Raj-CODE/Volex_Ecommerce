@@ -106,12 +106,12 @@ export default function UserDropdown() {
                             <div className="flex items-center gap-3">
                                 <Avatar size="lg" className="bg-linear-to-br from-[#49A5A2] to-[#3d8d8a] shadow-[0_2px_10px_rgba(73,165,162,0.3)]">
                                     <AvatarFallback className="bg-transparent text-white font-bold text-[15px]">
-                                        {user.name.charAt(0)}
+                                        {(user.name ?? user.email).charAt(0).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                    <p className="text-white text-[14px] font-semibold truncate">{user.name}</p>
-                                    <p className="text-white/40 text-[12px] truncate">{user.phone}</p>
+                                    <p className="text-white text-[14px] font-semibold truncate">{user.name ?? "My Account"}</p>
+                                    <p className="text-white/40 text-[12px] truncate">{user.email}</p>
                                 </div>
                             </div>
                         </div>

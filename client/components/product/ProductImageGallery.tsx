@@ -15,7 +15,6 @@ interface ProductImageGalleryProps {
 
 export default function ProductImageGallery({
   images,
-  title,
 }: ProductImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);

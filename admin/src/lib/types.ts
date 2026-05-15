@@ -1,8 +1,8 @@
-export type Role = "super_admin" | "product_manager";
+export type Role = "ADMIN" | "STAFF";
 
 export interface User {
   id: string;
-  name: string;
+  name: string | null;
   email: string;
   role: Role;
   avatar?: string;

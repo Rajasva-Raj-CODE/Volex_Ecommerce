@@ -12,7 +12,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "1",
     title: "Croma 80 cm (32 inch) HD Ready LED TV with A+ Panel",
-    slug: generateProductSlug("Croma 80 cm (32 inch) HD Ready LED TV with A+ Panel"),
+    slug: "croma-32-led-tv",
     category: "TV & Entertainment",
     categorySlug: "tv-entertainment",
     brand: "Croma",
@@ -98,7 +98,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "2",
     title: "Croma 5.1 Channel 340W Dolby Digital Soundbar with Subwoofer",
-    slug: generateProductSlug("Croma 5.1 Channel 340W Dolby Digital Soundbar with Subwoofer"),
+    slug: "croma-soundbar-340w",
     category: "Headphones & Speakers",
     categorySlug: "headphones-speakers",
     brand: "Croma",
@@ -170,7 +170,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "3",
     title: "Samsung Galaxy S24 Ultra 5G (12GB RAM, 256GB, Titanium Black)",
-    slug: generateProductSlug("Samsung Galaxy S24 Ultra 5G (12GB RAM, 256GB, Titanium Black)"),
+    slug: "samsung-galaxy-s24-ultra",
     category: "Mobiles, Tablets & Accessories",
     categorySlug: "mobiles-tablets-accessories",
     brand: "Samsung",
@@ -268,7 +268,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "4",
     title: "Apple MacBook Air 13 inch M3 Chip (8GB RAM, 256GB SSD, Midnight)",
-    slug: generateProductSlug("Apple MacBook Air 13 inch M3 Chip (8GB RAM, 256GB SSD, Midnight)"),
+    slug: "apple-macbook-air-m3",
     category: "Laptops & Accessories",
     categorySlug: "laptops-accessories",
     brand: "Apple",
@@ -357,7 +357,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "5",
     title: "Sony WH-1000XM5 Wireless Noise Cancelling Headphones (Black)",
-    slug: generateProductSlug("Sony WH-1000XM5 Wireless Noise Cancelling Headphones (Black)"),
+    slug: "sony-wh-1000xm5",
     category: "Headphones & Speakers",
     categorySlug: "headphones-speakers",
     brand: "Sony",
@@ -444,7 +444,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "6",
     title: "Canon EOS R50 Mirrorless Camera with RF-S 18-45mm Lens Kit",
-    slug: generateProductSlug("Canon EOS R50 Mirrorless Camera with RF-S 18-45mm Lens Kit"),
+    slug: "canon-eos-r50",
     category: "Cameras",
     categorySlug: "cameras",
     brand: "Canon",
@@ -522,7 +522,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "7",
     title: "Apple iPad Air 11 inch M2 Chip (128GB, Wi-Fi, Space Grey)",
-    slug: generateProductSlug("Apple iPad Air 11 inch M2 Chip (128GB, Wi-Fi, Space Grey)"),
+    slug: "apple-ipad-air-m2",
     category: "Mobiles, Tablets & Accessories",
     categorySlug: "mobiles-tablets-accessories",
     brand: "Apple",
@@ -601,7 +601,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "8",
     title: "JBL Flip 6 Portable Bluetooth Speaker with IP67 Waterproof",
-    slug: generateProductSlug("JBL Flip 6 Portable Bluetooth Speaker with IP67 Waterproof"),
+    slug: "jbl-flip-6",
     category: "Headphones & Speakers",
     categorySlug: "headphones-speakers",
     brand: "JBL",
@@ -679,7 +679,7 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     id: "9",
     title: "Apple Watch Series 9 GPS 45mm Aluminium Case (Midnight)",
-    slug: generateProductSlug("Apple Watch Series 9 GPS 45mm Aluminium Case (Midnight)"),
+    slug: "apple-watch-series-9",
     category: "Mobiles, Tablets & Accessories",
     categorySlug: "mobiles-tablets-accessories",
     brand: "Apple",
@@ -758,12 +758,70 @@ const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   },
 ];
 
+const LEGACY_PRODUCT_SLUG_TO_ID: Record<string, string> = {
+  [generateProductSlug("Croma 80 cm (32 inch) HD Ready LED TV with A+ Panel")]: "1",
+  [generateProductSlug("Croma 5.1 Channel 340W Dolby Digital Soundbar with Subwoofer")]: "2",
+  [generateProductSlug("Samsung Galaxy S24 Ultra 5G (12GB RAM, 256GB, Titanium Black)")]: "3",
+  [generateProductSlug("Apple MacBook Air 13 inch M3 Chip (8GB RAM, 256GB SSD, Midnight)")]: "4",
+  [generateProductSlug("Sony WH-1000XM5 Wireless Noise Cancelling Headphones (Black)")]: "5",
+  [generateProductSlug("Canon EOS R50 Mirrorless Camera with RF-S 18-45mm Lens Kit")]: "6",
+  [generateProductSlug("Apple iPad Air 11 inch M2 Chip (128GB, Wi-Fi, Space Grey)")]: "7",
+  [generateProductSlug("JBL Flip 6 Portable Bluetooth Speaker with IP67 Waterproof")]: "8",
+  [generateProductSlug("Apple Watch Series 9 GPS 45mm Aluminium Case (Midnight)")]: "9",
+};
+
 export function getProductBySlug(slug: string): ProductDetail | undefined {
-  return MOCK_PRODUCT_DETAILS.find((p) => p.slug === slug);
+  const product = MOCK_PRODUCT_DETAILS.find((p) => p.slug === slug);
+  if (product) return product;
+
+  const legacyProductId = LEGACY_PRODUCT_SLUG_TO_ID[slug];
+  return MOCK_PRODUCT_DETAILS.find((p) => p.id === legacyProductId);
 }
 
 export function getRelatedProducts(ids: string[]): ProductDetail[] {
   return MOCK_PRODUCT_DETAILS.filter((p) => ids.includes(p.id));
+}
+
+export function apiProductToDetail(
+  p: import("./catalog-api").ApiProduct
+): ProductDetail {
+  const price = Number(p.price);
+  const mrp = p.mrp ? Number(p.mrp) : price;
+  const discountPct = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  const savings = mrp > price ? `₹${(mrp - price).toLocaleString("en-IN")}` : "";
+
+  return {
+    id: p.id,
+    title: p.name,
+    slug: p.slug,
+    category: p.category?.name ?? "Products",
+    categorySlug: p.category?.slug ?? "products",
+    brand: p.brand ?? "VolteX",
+    images: p.images.length > 0
+      ? p.images.map((src, i) => ({ id: String(i), src, alt: `${p.name} image ${i + 1}` }))
+      : [{ id: "placeholder", src: "/assets/extracted/Mobile_sdtrdf.png", alt: p.name }],
+    price,
+    originalPrice: mrp,
+    discount: discountPct > 0 ? `${discountPct}% Off` : "",
+    savings,
+    rating: p.rating ? String(p.rating) : "4.0",
+    reviews: String(p.reviewCount ?? 0),
+    ratingCount: String(p.ratingCount ?? p.reviewCount ?? 0),
+    deliveryDate: p.deliveryDate ?? "3-5 business days",
+    deliveryFee: p.deliveryFee ?? "FREE",
+    inStock: p.stock > 0,
+    bankOffers: p.bankOffers ?? [],
+    highlights: p.highlights && p.highlights.length > 0
+      ? p.highlights
+      : p.description
+      ? [{ text: p.description }]
+      : [],
+    specGroups: p.specGroups ?? [],
+    overview: p.overview ?? [],
+    variants: p.variants ?? [],
+    relatedProductIds: p.relatedProductIds ?? [],
+    warranty: p.warranty ?? undefined,
+  };
 }
 
 export { MOCK_PRODUCT_DETAILS };

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     UserAccountIcon,
@@ -52,14 +53,15 @@ const NAV_ITEMS = [
     },
 ];
 
-// Mock user — replace with your auth context
-const user = {
-    name: "Raj Kumar",
-    email: "raj.kumar@email.com",
-};
-
 export default function AccountSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        await logout();
+        router.push("/");
+    };
 
     return (
         <div className="rounded-xl border border-white/[0.08] bg-[#1a1a1a]/80 backdrop-blur-sm overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
@@ -70,15 +72,15 @@ export default function AccountSidebar() {
             <div className="px-5 py-5 border-b border-white/[0.06] flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#49A5A2] to-[#3d8d8a] flex items-center justify-center shadow-[0_2px_12px_rgba(73,165,162,0.35)] shrink-0">
                     <span className="text-white text-[16px] font-bold">
-                        {user.name.charAt(0)}
+                        {((user?.name ?? user?.email) || "?").charAt(0).toUpperCase()}
                     </span>
                 </div>
                 <div className="min-w-0">
                     <p className="text-white text-[14px] font-semibold truncate">
-                        {user.name}
+                        {user?.name ?? "My Account"}
                     </p>
                     <p className="text-white/40 text-[12px] truncate">
-                        {user.email}
+                        {user?.email ?? ""}
                     </p>
                 </div>
             </div>
@@ -126,7 +128,7 @@ export default function AccountSidebar() {
             <div className="border-t border-white/[0.06] mx-4" />
             <div className="py-2 pr-3 pb-3">
                 <button
-                    onClick={() => console.log("Logout")}
+                    onClick={handleLogout}
                     className="group flex items-center gap-3.5 px-4 py-3 w-full rounded-lg mx-1 hover:bg-red-500/[0.06] border border-transparent transition-all duration-150 cursor-pointer"
                 >
                     <div className="w-9 h-9 flex items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.03] group-hover:border-red-500/30 group-hover:bg-red-500/[0.08] transition-all duration-200">

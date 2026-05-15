@@ -38,7 +38,11 @@ function VolteXLogo() {
     );
 }
 
-export function MobileMenu() {
+interface MobileMenuProps {
+    onSearchFocus?: () => void;
+}
+
+export function MobileMenu({ onSearchFocus }: MobileMenuProps) {
     const [open, setOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<NavCategory | null>(null);
 
@@ -81,7 +85,14 @@ export function MobileMenu() {
                                 />
                                 <Input
                                     placeholder="What are you looking for?"
-                                    className="h-11 w-full rounded-full border-none bg-white/10 pl-10 pr-10 text-[13px] text-white placeholder:text-white/40"
+                                    readOnly
+                                    onFocus={(e) => {
+                                        e.preventDefault();
+                                        e.target.blur();
+                                        setOpen(false);
+                                        onSearchFocus?.();
+                                    }}
+                                    className="h-11 w-full rounded-full border-none bg-white/10 pl-10 pr-10 text-[13px] text-white placeholder:text-white/40 cursor-pointer"
                                 />
                                 <HugeiconsIcon
                                     icon={Mic01Icon}

@@ -14,9 +14,8 @@ const REFRESH_TOKEN_EXPIRES_DAYS = 7;
 export async function inviteStaff(input: SendInviteInput, invitedById: string) {
   const { email, name } = input;
 
-  // Check if user already exists and is active staff
   const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
+  if (existingUser && (existingUser.role !== "STAFF" || existingUser.isActive)) {
     throw new AppError("A user with this email already exists", 409);
   }
 
@@ -51,17 +50,24 @@ export async function inviteStaff(input: SendInviteInput, invitedById: string) {
     },
   });
 
-  // Send invite email
-  await sendStaffInviteEmail({
-    toEmail: email,
-    invitedByName: admin?.name ?? "Admin",
-    adminUrl: env.ADMIN_URL,
-  });
+  // Send invite email (non-blocking — invitation is created even if email fails)
+  let emailSent = true;
+  try {
+    await sendStaffInviteEmail({
+      toEmail: email,
+      invitedByName: admin?.name ?? "Admin",
+      adminUrl: env.ADMIN_URL,
+    });
+  } catch (err) {
+    emailSent = false;
+    console.error("Staff invite email failed:", err);
+  }
 
   return {
     id: invitation.id,
     email: invitation.email,
     createdAt: invitation.createdAt,
+    emailSent,
   };
 }
 
@@ -81,15 +87,27 @@ export async function listInvitations() {
 export async function revokeInvitation(id: string) {
   const invite = await prisma.invitation.findUnique({ where: { id } });
   if (!invite) throw new AppError("Invitation not found", 404);
-  if (invite.used) throw new AppError("Cannot revoke an already accepted invitation", 400);
 
-  // Deactivate the staff user too
-  await prisma.user.update({
+  const staffUser = await prisma.user.findUnique({
     where: { email: invite.email },
-    data: { isActive: false },
+    select: { id: true, role: true },
   });
 
-  await prisma.invitation.delete({ where: { id } });
+  if (staffUser && staffUser.role !== "STAFF") {
+    throw new AppError("Only staff invitations can be revoked from the team page", 400);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (staffUser) {
+      await tx.refreshToken.deleteMany({ where: { userId: staffUser.id } });
+      await tx.user.update({
+        where: { id: staffUser.id },
+        data: { isActive: false },
+      });
+    }
+
+    await tx.invitation.delete({ where: { id } });
+  });
 }
 
 // ─── Staff: Request OTP ───────────────────────────────────────────────────────
@@ -128,7 +146,14 @@ export async function requestOtp(input: RequestOtpInput) {
   });
 
   // Send OTP email
-  await sendOtpEmail({ toEmail: email, otp });
+  try {
+    await sendOtpEmail({ toEmail: email, otp });
+  } catch {
+    throw new AppError(
+      "Could not send OTP email. On the free Resend plan, emails can only be sent to the account owner's email. Verify a domain at resend.com/domains to send to other addresses.",
+      502
+    );
+  }
 
   return { message: "OTP sent to your email" };
 }

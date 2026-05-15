@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Settings01Icon, LockPasswordIcon, Notification03Icon, EyeIcon, Delete01Icon } from "@hugeicons/core-free-icons";
+import { LockPasswordIcon, Notification03Icon, EyeIcon, Delete01Icon } from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

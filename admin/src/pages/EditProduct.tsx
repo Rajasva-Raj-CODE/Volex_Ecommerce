@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Add02Icon, Cancel01Icon, Trash } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, Cancel01Icon, Upload02Icon } from "@hugeicons/core-free-icons";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,81 +25,198 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-
-const CATEGORY_DATA: Record<string, { name: string; subcategories: string[] }> = {
-  phones: { name: "Phones", subcategories: ["iPhone", "Samsung Galaxy", "OnePlus", "Xiaomi", "Google Pixel", "Nothing"] },
-  laptops: { name: "Laptops", subcategories: ["MacBook", "Dell", "HP", "Lenovo", "ASUS", "Acer"] },
-  tablets: { name: "Tablets", subcategories: ["iPad", "Samsung Tab", "Lenovo Tab", "OnePlus Pad"] },
-  audio: { name: "Audio", subcategories: ["Headphones", "Earbuds", "Speakers", "Soundbars"] },
-  cameras: { name: "Cameras", subcategories: ["DSLR", "Mirrorless", "Action Cameras", "Instant Cameras"] },
-  wearables: { name: "Wearables", subcategories: ["Smartwatch", "Fitness Band", "Smart Ring"] },
-  tv: { name: "TV & Entertainment", subcategories: ["Smart TV", "Streaming Device", "Projector"] },
-  appliances: { name: "Appliances", subcategories: ["Refrigerator", "Washing Machine", "AC", "Microwave"] },
-};
-
-const MOCK_PRODUCT: Record<string, { name: string; category: string; subcategory: string; price: number; stock: number }> = {
-  "1": { name: "iPhone 16 Pro Max 256GB", category: "phones", subcategory: "iPhone", price: 159900, stock: 12 },
-  "2": { name: "Samsung Galaxy S24 Ultra", category: "phones", subcategory: "Samsung Galaxy", price: 129999, stock: 18 },
-  "3": { name: "OnePlus 12 256GB", category: "phones", subcategory: "OnePlus", price: 64999, stock: 14 },
-};
-
-interface ProductVariant {
-  id: string;
-  name: string;
-  sku: string;
-  price: string;
-  stock: string;
-}
+import { getProduct, updateProduct, type ApiProduct } from "@/lib/products-api";
+import { listCategoriesFlat, type ApiCategory } from "@/lib/categories-api";
+import { uploadImage } from "@/lib/uploads-api";
+import { ApiError } from "@/lib/api";
 
 export default function EditProduct() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const product = MOCK_PRODUCT[id || "1"] || MOCK_PRODUCT["1"];
+  const { id } = useParams<{ id: string }>();
 
-  const [selectedCategory, setSelectedCategory] = useState(product.category);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(product.subcategory);
-  const [name, setName] = useState(product.name);
-  const [slug, setSlug] = useState(product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
-  const [price, setPrice] = useState(String(product.price));
-  const [comparePrice, setComparePrice] = useState("");
-  const [stock, setStock] = useState(String(product.stock));
-  const [shortDesc, setShortDesc] = useState("");
-  const [fullDesc, setFullDesc] = useState("");
+  const [product, setProduct] = useState<ApiProduct | null>(null);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Form state
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [mrp, setMrp] = useState("");
+  const [stock, setStock] = useState("0");
+  const [brand, setBrand] = useState("");
+  const [warranty, setWarranty] = useState("");
+  const [rating, setRating] = useState("");
+  const [ratingCount, setRatingCount] = useState("0");
+  const [reviewCount, setReviewCount] = useState("0");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [highlightsText, setHighlightsText] = useState("");
+  const [specGroupsJson, setSpecGroupsJson] = useState("[]");
+  const [overviewJson, setOverviewJson] = useState("[]");
+  const [bankOffersJson, setBankOffersJson] = useState("[]");
+  const [variantsJson, setVariantsJson] = useState("[]");
+  const [relatedProductIdsText, setRelatedProductIdsText] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [isFeatured, setIsFeatured] = useState(false);
-  const [tags, setTags] = useState<string[]>(["flagship", "new"]);
-  const [tagInput, setTagInput] = useState("");
-  const [variants, setVariants] = useState<ProductVariant[]>([
-    { id: "1", name: "256GB Black Titanium", sku: "IP16PM-256-BLK", price: "159900", stock: "5" },
-    { id: "2", name: "512GB Black Titanium", sku: "IP16PM-512-BLK", price: "179900", stock: "4" },
-    { id: "3", name: "256GB Natural Titanium", sku: "IP16PM-256-NAT", price: "159900", stock: "3" },
-  ]);
-  const [_images, _setImages] = useState(["img1.jpg", "img2.jpg", "img3.jpg"]);
+  const [imageUrls, setImageUrls] = useState<string[]>([""]);
 
-  const subcategories = selectedCategory ? CATEGORY_DATA[selectedCategory]?.subcategories || [] : [];
+  const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
+  useEffect(() => {
+    if (!id) return;
+    void (async () => {
+      try {
+        const p = await getProduct(id);
+        setProduct(p);
+        setName(p.name);
+        setSlug(p.slug);
+        setDescription(p.description ?? "");
+        setPrice(String(Number(p.price)));
+        setMrp(p.mrp ? String(Number(p.mrp)) : "");
+        setStock(String(p.stock));
+        setBrand(p.brand ?? "");
+        setWarranty(p.warranty ?? "");
+        setRating(p.rating ? String(Number(p.rating)) : "");
+        setRatingCount(String(p.ratingCount ?? 0));
+        setReviewCount(String(p.reviewCount ?? 0));
+        setDeliveryDate(p.deliveryDate ?? "");
+        setDeliveryFee(p.deliveryFee ?? "");
+        setHighlightsText((p.highlights ?? []).map((h) => h.text).join("\n"));
+        setSpecGroupsJson(JSON.stringify(p.specGroups ?? [], null, 2));
+        setOverviewJson(JSON.stringify(p.overview ?? [], null, 2));
+        setBankOffersJson(JSON.stringify(p.bankOffers ?? [], null, 2));
+        setVariantsJson(JSON.stringify(p.variants ?? [], null, 2));
+        setRelatedProductIdsText((p.relatedProductIds ?? []).join(", "));
+        setCategoryId(p.categoryId);
+        setIsActive(p.isActive);
+        setImageUrls(p.images.length > 0 ? p.images : [""]);
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : "Failed to load product");
+        navigate("/products");
+      } finally {
+        setLoadingProduct(false);
+      }
+    })();
+  }, [id, navigate]);
+
+  useEffect(() => {
+    listCategoriesFlat()
+      .then(setCategories)
+      .catch(() => toast.error("Failed to load categories"))
+      .finally(() => setLoadingCategories(false));
+  }, []);
+
+  function handleImageChange(index: number, value: string) {
+    setImageUrls((prev) => prev.map((url, i) => (i === index ? value : url)));
+  }
+
+  function addImageRow() {
+    setImageUrls((prev) => [...prev, ""]);
+  }
+
+  function removeImageRow(index: number) {
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleImageUpload(index: number, file: File | undefined) {
+    if (!file) return;
+    setUploadingImageIndex(index);
+    try {
+      const image = await uploadImage(file, "products");
+      handleImageChange(index, image.url);
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to upload image");
+    } finally {
+      setUploadingImageIndex(null);
     }
-  };
+  }
 
-  const handleRemoveTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
-  };
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = "Name is required";
+    if (!price || Number(price) <= 0) errs.price = "Price must be greater than 0";
+    if (!categoryId) errs.categoryId = "Category is required";
+    for (const [key, value] of Object.entries({
+      specGroupsJson,
+      overviewJson,
+      bankOffersJson,
+      variantsJson,
+    })) {
+      try {
+        const parsed = JSON.parse(value || "[]") as unknown;
+        if (!Array.isArray(parsed)) errs[key] = "Must be a JSON array";
+      } catch {
+        errs[key] = "Invalid JSON";
+      }
+    }
+    return errs;
+  }
 
-  const handleAddVariant = () => {
-    setVariants([...variants, { id: Date.now().toString(), name: "", sku: "", price: "", stock: "" }]);
-  };
+  async function handleSubmit() {
+    if (!product) return;
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
 
-  const handleRemoveVariant = (vid: string) => {
-    setVariants(variants.filter((v) => v.id !== vid));
-  };
+    const validImages = imageUrls.map((u) => u.trim()).filter((u) => u.length > 0);
+    const highlights = highlightsText
+      .split("\n")
+      .map((text) => text.trim())
+      .filter(Boolean)
+      .map((text) => ({ text }));
 
-  const handleVariantChange = (vid: string, field: keyof ProductVariant, value: string) => {
-    setVariants(variants.map((v) => (v.id === vid ? { ...v, [field]: value } : v)));
-  };
+    setSubmitting(true);
+    try {
+      await updateProduct(product.id, {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        price: Number(price),
+        mrp: mrp && Number(mrp) > 0 ? Number(mrp) : undefined,
+        stock: Number(stock),
+        images: validImages,
+        brand: brand.trim() || undefined,
+        highlights,
+        specGroups: JSON.parse(specGroupsJson || "[]"),
+        overview: JSON.parse(overviewJson || "[]"),
+        bankOffers: JSON.parse(bankOffersJson || "[]"),
+        variants: JSON.parse(variantsJson || "[]"),
+        relatedProductIds: relatedProductIdsText.split(",").map((item) => item.trim()).filter(Boolean),
+        warranty: warranty.trim() || undefined,
+        rating: rating ? Number(rating) : undefined,
+        ratingCount: Number(ratingCount || 0),
+        reviewCount: Number(reviewCount || 0),
+        deliveryDate: deliveryDate.trim() || undefined,
+        deliveryFee: deliveryFee.trim() || undefined,
+        categoryId,
+        isActive,
+      });
+      toast.success(`"${name.trim()}" updated successfully`);
+      navigate("/products");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to update product");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const parentCategories = categories.filter((c) => !c.parentId);
+  const childCategories = categories.filter((c) => c.parentId);
+
+  if (loadingProduct) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        Loading product…
+      </div>
+    );
+  }
 
   return (
     <>
@@ -109,11 +226,13 @@ export default function EditProduct() {
         </Button>
         <div>
           <h1 className="text-xl font-semibold">Edit Product</h1>
-          <p className="text-sm text-muted-foreground">Editing: {product.name}</p>
+          <p className="text-sm text-muted-foreground">Editing: {product?.name}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate("/products")}>Cancel</Button>
-          <Button>Save Changes</Button>
+          <Button variant="outline" onClick={() => navigate("/products")} disabled={submitting}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Saving…" : "Save Changes"}
+          </Button>
         </div>
       </div>
 
@@ -126,75 +245,94 @@ export default function EditProduct() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Product Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+                <Label htmlFor="name">
+                  Product Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                  }}
+                  className={errors.name ? "border-destructive" : ""}
+                />
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Short Description</Label>
-                <Textarea value={shortDesc} onChange={(e) => setShortDesc(e.target.value)} rows={2} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Full Description</Label>
-                <Textarea value={fullDesc} onChange={(e) => setFullDesc(e.target.value)} rows={6} />
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Category */}
+          {/* Category & Brand */}
           <Card>
             <CardHeader>
-              <CardTitle>Category</CardTitle>
+              <CardTitle>Category & Brand</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              {selectedCategory && (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-sm">
-                  <Badge variant="secondary">{CATEGORY_DATA[selectedCategory]?.name}</Badge>
-                  {selectedSubcategory && (
-                    <>
-                      <span className="text-muted-foreground">&rarr;</span>
-                      <Badge variant="outline">{selectedSubcategory}</Badge>
-                    </>
-                  )}
-                  {name && (
-                    <>
-                      <span className="text-muted-foreground">&rarr;</span>
-                      <Badge>{name}</Badge>
-                    </>
-                  )}
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label>Category</Label>
-                  <Select value={selectedCategory} onValueChange={(v) => { if (v) { setSelectedCategory(v); setSelectedSubcategory(""); } }}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <Label>
+                    Category <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={categoryId}
+                    onValueChange={(v) => {
+                      if (v) {
+                        setCategoryId(v);
+                        if (errors.categoryId) setErrors((prev) => ({ ...prev, categoryId: "" }));
+                      }
+                    }}
+                    disabled={loadingCategories}
+                  >
+                    <SelectTrigger className={`w-full ${errors.categoryId ? "border-destructive" : ""}`}>
+                      <SelectValue placeholder={loadingCategories ? "Loading…" : "Select category"} />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Categories</SelectLabel>
-                        {Object.entries(CATEGORY_DATA).map(([key, cat]) => (
-                          <SelectItem key={key} value={key}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectGroup>
+                      {parentCategories.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Top-level</SelectLabel>
+                          {parentCategories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                      {childCategories.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Subcategories</SelectLabel>
+                          {childCategories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.parent?.name} › {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
+                  {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId}</p>}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Subcategory</Label>
-                  <Select value={selectedSubcategory} onValueChange={(v) => { if (v) setSelectedSubcategory(v); }}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Subcategories</SelectLabel>
-                        {subcategories.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="brand">Brand</Label>
+                  <Input
+                    id="brand"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -206,67 +344,154 @@ export default function EditProduct() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Selling Price (₹)</Label>
-                  <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+                  <Label>
+                    Selling Price (₹) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => {
+                      setPrice(e.target.value);
+                      if (errors.price) setErrors((prev) => ({ ...prev, price: "" }));
+                    }}
+                    className={errors.price ? "border-destructive" : ""}
+                  />
+                  {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Compare at Price (₹)</Label>
-                  <Input type="number" value={comparePrice} onChange={(e) => setComparePrice(e.target.value)} />
+                  <Label>MRP (₹)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={mrp}
+                    onChange={(e) => setMrp(e.target.value)}
+                  />
                 </div>
               </div>
+              {price && mrp && Number(mrp) > Number(price) && (
+                <div className="mt-3 flex items-center gap-2 text-sm">
+                  <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                    {Math.round(((Number(mrp) - Number(price)) / Number(mrp)) * 100)}% OFF
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Variants */}
+          {/* Images */}
           <Card>
             <CardHeader>
-              <CardTitle>Variants</CardTitle>
-              <CardDescription>Color, storage, size options</CardDescription>
+              <CardTitle>Images</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {variants.length > 0 && (
-                <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground">
-                    <div className="col-span-4">Variant</div>
-                    <div className="col-span-2">SKU</div>
-                    <div className="col-span-2">Price (₹)</div>
-                    <div className="col-span-2">Stock</div>
-                    <div className="col-span-2"></div>
+            <CardContent className="flex flex-col gap-3">
+              {imageUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 w-16 shrink-0">
+                    {i === 0 ? (
+                      <Badge className="text-[10px] shrink-0">Main</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">#{i + 1}</span>
+                    )}
                   </div>
-                  {variants.map((v) => (
-                    <div key={v.id} className="grid grid-cols-12 items-center gap-2">
-                      <Input className="col-span-4 h-8" value={v.name} onChange={(e) => handleVariantChange(v.id, "name", e.target.value)} />
-                      <Input className="col-span-2 h-8" value={v.sku} onChange={(e) => handleVariantChange(v.id, "sku", e.target.value)} />
-                      <Input className="col-span-2 h-8" type="number" value={v.price} onChange={(e) => handleVariantChange(v.id, "price", e.target.value)} />
-                      <Input className="col-span-2 h-8" type="number" value={v.stock} onChange={(e) => handleVariantChange(v.id, "stock", e.target.value)} />
-                      <Button variant="ghost" size="icon" className="col-span-2 size-8 hover:text-destructive" onClick={() => handleRemoveVariant(v.id)}>
-                        <HugeiconsIcon icon={Trash} size={14} />
-                      </Button>
-                    </div>
-                  ))}
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={url}
+                    onChange={(e) => handleImageChange(i, e.target.value)}
+                    className="flex-1 h-8"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    disabled={uploadingImageIndex === i}
+                    onChange={(e) => void handleImageUpload(i, e.target.files?.[0])}
+                    className="max-w-[190px] h-8 text-xs"
+                  />
+                  {imageUrls.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-destructive shrink-0"
+                      onClick={() => removeImageRow(i)}
+                    >
+                      <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                    </Button>
+                  )}
                 </div>
-              )}
-              <Button variant="outline" size="sm" onClick={handleAddVariant}>
-                <HugeiconsIcon icon={Add02Icon} size={14} /> Add Variant
+              ))}
+              <Button variant="outline" size="sm" onClick={addImageRow} className="w-fit">
+                <HugeiconsIcon icon={Upload02Icon} size={14} />
+                {uploadingImageIndex !== null ? "Uploading..." : "Add Image"}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Tags */}
           <Card>
-            <CardHeader><CardTitle>Tags</CardTitle></CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
-                    {tag}
-                    <button onClick={() => handleRemoveTag(tag)}><HugeiconsIcon icon={Cancel01Icon} size={10} /></button>
-                  </Badge>
-                ))}
+            <CardHeader>
+              <CardTitle>Storefront Detail Content</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="warranty">Warranty</Label>
+                  <Input id="warranty" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="deliveryDate">Delivery Date Text</Label>
+                  <Input id="deliveryDate" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="deliveryFee">Delivery Fee Text</Label>
+                  <Input id="deliveryFee" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="rating">Rating</Label>
+                  <Input id="rating" type="number" min="0" max="5" step="0.1" value={rating} onChange={(e) => setRating(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="ratingCount">Rating Count</Label>
+                  <Input id="ratingCount" type="number" min="0" value={ratingCount} onChange={(e) => setRatingCount(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="reviewCount">Review Count</Label>
+                  <Input id="reviewCount" type="number" min="0" value={reviewCount} onChange={(e) => setReviewCount(e.target.value)} />
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())} placeholder="Add tag" className="h-8 max-w-xs" />
-                <Button variant="outline" size="sm" onClick={handleAddTag}><HugeiconsIcon icon={Add02Icon} size={14} /> Add</Button>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="highlights">Highlights <span className="text-muted-foreground font-normal">(one per line)</span></Label>
+                <Textarea id="highlights" value={highlightsText} onChange={(e) => setHighlightsText(e.target.value)} rows={5} />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="specGroupsJson">Specifications JSON</Label>
+                  <Textarea id="specGroupsJson" value={specGroupsJson} onChange={(e) => setSpecGroupsJson(e.target.value)} rows={7} className={errors.specGroupsJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.specGroupsJson && <p className="text-xs text-destructive">{errors.specGroupsJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="overviewJson">Overview JSON</Label>
+                  <Textarea id="overviewJson" value={overviewJson} onChange={(e) => setOverviewJson(e.target.value)} rows={7} className={errors.overviewJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.overviewJson && <p className="text-xs text-destructive">{errors.overviewJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="bankOffersJson">Bank Offers JSON</Label>
+                  <Textarea id="bankOffersJson" value={bankOffersJson} onChange={(e) => setBankOffersJson(e.target.value)} rows={7} className={errors.bankOffersJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.bankOffersJson && <p className="text-xs text-destructive">{errors.bankOffersJson}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="variantsJson">Variants JSON</Label>
+                  <Textarea id="variantsJson" value={variantsJson} onChange={(e) => setVariantsJson(e.target.value)} rows={7} className={errors.variantsJson ? "border-destructive font-mono text-xs" : "font-mono text-xs"} />
+                  {errors.variantsJson && <p className="text-xs text-destructive">{errors.variantsJson}</p>}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="relatedProductIds">Related Product IDs <span className="text-muted-foreground font-normal">(comma separated)</span></Label>
+                <Input id="relatedProductIds" value={relatedProductIdsText} onChange={(e) => setRelatedProductIdsText(e.target.value)} />
               </div>
             </CardContent>
           </Card>
@@ -276,25 +501,28 @@ export default function EditProduct() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader><CardTitle>Status</CardTitle></CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <CardContent>
               <div className="flex items-center justify-between">
-                <div><p className="text-sm font-medium">Active</p></div>
+                <div>
+                  <p className="text-sm font-medium">Active</p>
+                  <p className="text-xs text-muted-foreground">Visible on storefront</p>
+                </div>
                 <Switch checked={isActive} onCheckedChange={setIsActive} />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div><p className="text-sm font-medium">Featured</p></div>
-                <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader><CardTitle>Inventory</CardTitle></CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <CardContent>
               <div className="flex flex-col gap-2">
                 <Label>Stock Quantity</Label>
-                <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+                <Input
+                  type="number"
+                  min="0"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                />
               </div>
             </CardContent>
           </Card>
@@ -305,17 +533,33 @@ export default function EditProduct() {
             </CardHeader>
             <CardContent>
               <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted text-4xl">📱</div>
-                <p className="font-medium">{name || "Product Name"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {selectedSubcategory || "Subcategory"} / {CATEGORY_DATA[selectedCategory]?.name || "Category"}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="font-semibold">₹{price ? Number(price).toLocaleString("en-IN") : "0"}</span>
+                <div className="mb-3 flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden">
+                  {imageUrls[0]?.trim() ? (
+                    <img
+                      src={imageUrls[0]}
+                      alt={name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : (
+                    <span className="text-4xl">🖼️</span>
+                  )}
                 </div>
-                <div className="mt-2 flex gap-1">
-                  {isActive && <Badge variant="outline" className="text-[10px]">Active</Badge>}
-                  {isFeatured && <Badge variant="outline" className="text-[10px]">Featured</Badge>}
+                <p className="font-medium">{name || "Product Name"}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-semibold text-sm">
+                    ₹{price ? Number(price).toLocaleString("en-IN") : "0"}
+                  </span>
+                  {mrp && Number(mrp) > 0 && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      ₹{Number(mrp).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                </div>
+                <Separator className="my-2" />
+                <div className="text-xs text-muted-foreground">
+                  Stock: {stock}
+                  {!isActive && <Badge variant="secondary" className="ml-2 text-[10px]">Inactive</Badge>}
                 </div>
               </div>
             </CardContent>

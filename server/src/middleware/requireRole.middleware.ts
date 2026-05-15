@@ -2,7 +2,7 @@ import type { Response, NextFunction } from "express";
 import type { AuthRequest } from "./auth.middleware";
 import { AppError } from "./error.middleware";
 
-type Role = "ADMIN" | "STAFF";
+type Role = "ADMIN" | "STAFF" | "CUSTOMER";
 
 /**
  * Role guard — use after requireAuth.

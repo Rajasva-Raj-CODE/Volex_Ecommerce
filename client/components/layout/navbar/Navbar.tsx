@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -14,10 +15,14 @@ import {
     Cancel01Icon
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { NAV_CATEGORIES } from "./nav-data";
+import { NAV_CATEGORIES, TRENDING_SEARCHES } from "./nav-data";
 import { MegaDropdown } from "./MegaMenu";
 import { MobileMenu } from "./MobileMenu";
 import UserDropdown from "./UserDropdown";
+import { SearchSuggestions } from "./SearchSuggestions";
+import { useAuth } from "@/contexts/AuthContext";
+import { getCart } from "@/lib/cart-api";
+import { CART_UPDATED_EVENT } from "@/lib/cart-events";
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
@@ -43,10 +48,25 @@ function VolteXLogo({ className = "" }: { className?: string }) {
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 
 export default function Navbar() {
+    const router = useRouter();
+    const { isLoggedIn, isReady } = useAuth();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [searchValue, setSearchValue] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [cartCount, setCartCount] = useState(0);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    function closeSearch() {
+        setIsSearchFocused(false);
+        setSearchValue("");
+    }
+
+    function handleSearchSubmit() {
+        if (!searchValue.trim()) return;
+        const q = searchValue.trim();
+        closeSearch();
+        router.push(`/search?q=${encodeURIComponent(q)}`);
+    }
 
     function handleEnter(label: string) {
         if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -73,6 +93,37 @@ export default function Navbar() {
         return () => { document.body.style.overflow = ''; };
     }, [isSearchFocused]);
 
+    useEffect(() => {
+        if (!isReady) return;
+        if (!isLoggedIn) {
+            queueMicrotask(() => setCartCount(0));
+            return;
+        }
+
+        let cancelled = false;
+
+        async function refreshCartCount() {
+            try {
+                const cart = await getCart();
+                if (!cancelled) {
+                    setCartCount(cart.items.reduce((sum, item) => sum + item.quantity, 0));
+                }
+            } catch {
+                if (!cancelled) setCartCount(0);
+            }
+        }
+
+        void refreshCartCount();
+        window.addEventListener(CART_UPDATED_EVENT, refreshCartCount);
+        window.addEventListener("focus", refreshCartCount);
+
+        return () => {
+            cancelled = true;
+            window.removeEventListener(CART_UPDATED_EVENT, refreshCartCount);
+            window.removeEventListener("focus", refreshCartCount);
+        };
+    }, [isReady, isLoggedIn]);
+
     const activeCat = NAV_CATEGORIES.find((c) => c.label === activeCategory);
 
     return (
@@ -92,7 +143,7 @@ export default function Navbar() {
 
                         {/* Mobile Menu & Logo */}
                         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                            <MobileMenu />
+                            <MobileMenu onSearchFocus={() => setIsSearchFocused(true)} />
                             <Link href="/">
                                 <VolteXLogo />
                             </Link>
@@ -132,11 +183,12 @@ export default function Navbar() {
                                             autoFocus
                                             value={searchValue}
                                             onChange={(e) => setSearchValue(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === "Enter") handleSearchSubmit(); }}
                                             placeholder="What are you looking for?"
                                             className="w-full h-full bg-transparent border-none outline-none focus:ring-0 px-4 text-[16px] text-gray-900 placeholder:text-gray-400"
                                         />
                                         <button
-                                            onClick={() => { setIsSearchFocused(false); setSearchValue(''); }}
+                                            onClick={closeSearch}
                                             className="text-gray-500 hover:text-black shrink-0 p-2"
                                         >
                                             <HugeiconsIcon icon={Cancel01Icon} size={24} />
@@ -144,29 +196,42 @@ export default function Navbar() {
                                     </div>
 
                                     <div className="p-8 text-left max-h-[70vh] overflow-y-auto">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <span className="font-bold text-gray-900 text-[15px]">Trending Searches</span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2.5 mb-6">
-                                            {[
-                                                "Air Conditioners", "Air Coolers", "MacBooks", "iPhone 17", "Televisions",
-                                                "Refrigerators", "Nothing 4A", "AirTags", "Air Fryers", "Printer"
-                                            ].map(item => (
-                                                <button key={item} className="px-4 py-1.5 border border-gray-200 rounded-full text-[13px] text-gray-700 hover:border-[#49A5A2] hover:text-[#49A5A2] transition-colors bg-white">
-                                                    {item}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <div className="relative w-full h-[180px] rounded-xl overflow-hidden">
-                                            <Image
-                                                src="/assets/extracted/HP_Rotating_Apple_MBneo_11March2026_XtdRqQHdE.jpg"
-                                                alt="MacBook Neo"
-                                                fill
-                                                sizes="800px"
-                                                className="object-cover"
+                                        {searchValue.trim() ? (
+                                            <SearchSuggestions
+                                                searchValue={searchValue}
+                                                onClose={closeSearch}
                                             />
-                                        </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="font-bold text-gray-900 text-[15px]">Trending Searches</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2.5 mb-6">
+                                                    {TRENDING_SEARCHES.map(item => (
+                                                        <button
+                                                            key={item}
+                                                            onClick={() => {
+                                                                closeSearch();
+                                                                router.push(`/search?q=${encodeURIComponent(item)}`);
+                                                            }}
+                                                            className="px-4 py-1.5 border border-gray-200 rounded-full text-[13px] text-gray-700 hover:border-[#49A5A2] hover:text-[#49A5A2] transition-colors bg-white cursor-pointer"
+                                                        >
+                                                            {item}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="relative w-full h-[180px] rounded-xl overflow-hidden">
+                                                    <Image
+                                                        src="/assets/extracted/HP_Rotating_Apple_MBneo_11March2026_XtdRqQHdE.jpg"
+                                                        alt="MacBook Neo"
+                                                        fill
+                                                        sizes="800px"
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -182,9 +247,17 @@ export default function Navbar() {
 
                             <UserDropdown />
 
-                            <Button variant="ghost" size="lg" className="relative text-white hover:bg-white/5 hover:text-[#49A5A2] rounded-full ml-1 cursor-pointer">
+                            <Button
+                                variant="ghost"
+                                size="lg"
+                                aria-label="Open cart"
+                                onClick={() => router.push("/cart")}
+                                className="relative text-white hover:bg-white/5 hover:text-[#49A5A2] rounded-full ml-1 cursor-pointer"
+                            >
                                 <HugeiconsIcon icon={ShoppingCart01Icon} size={24} />
-                                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#49A5A2] text-[10px] font-bold text-white">0</span>
+                                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#49A5A2] px-1 text-[10px] font-bold text-white">
+                                    {cartCount > 99 ? "99+" : cartCount}
+                                </span>
                             </Button>
                         </div>
                     </div>

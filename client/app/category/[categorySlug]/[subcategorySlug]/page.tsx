@@ -26,7 +26,10 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
     <div className="flex w-full max-w-full flex-1 flex-col items-center bg-[#0f0f0f]">
       <Navbar />
       <div className="w-full">
-        <ProductListingTemplate categoryTitle={subCategoryTitle} />
+        <ProductListingTemplate
+          categoryTitle={subCategoryTitle}
+          categorySlug={resolvedParams.subcategorySlug}
+        />
       </div>
       <Footer className="w-full self-stretch" />
     </div>

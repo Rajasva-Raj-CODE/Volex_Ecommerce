@@ -12,10 +12,17 @@ datasource db {
 enum Role {
   ADMIN
   STAFF
+  CUSTOMER
 }
 
 enum OtpPurpose {
   STAFF_LOGIN
+  RESET_PASSWORD
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
 }
 
 enum OrderStatus {
@@ -26,6 +33,13 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -33,6 +47,8 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String?  // Only ADMIN has this. STAFF logs in via OTP.
+  phone        String?
+  avatar       String?
   role         Role     @default(STAFF)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -44,6 +60,7 @@ model User {
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
   addresses       Address[]
+  reviews         Review[]
 
   @@index([email])
 }
@@ -112,24 +129,37 @@ model Category {
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  price       Decimal  @db.Decimal(10, 2)
-  mrp         Decimal? @db.Decimal(10, 2)
-  stock       Int      @default(0)
-  images      String[] // Array of image URLs (Cloudinary / any CDN)
-  brand       String?
-  isActive    Boolean  @default(true)
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  description       String?
+  price             Decimal  @db.Decimal(10, 2)
+  mrp               Decimal? @db.Decimal(10, 2)
+  stock             Int      @default(0)
+  images            String[] // Array of image URLs (Cloudinary / any CDN)
+  brand             String?
+  highlights        Json?
+  specGroups        Json?
+  overview          Json?
+  variants          Json?
+  bankOffers        Json?
+  relatedProductIds String[] @default([])
+  warranty          String?
+  rating            Decimal? @db.Decimal(3, 2)
+  ratingCount       Int      @default(0)
+  reviewCount       Int      @default(0)
+  deliveryDate      String?
+  deliveryFee       String?
+  isActive          Boolean  @default(true)
+  categoryId        String
+  category          Category @relation(fields: [categoryId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   orderItems    OrderItem[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
 
   @@index([slug])
   @@index([categoryId])
@@ -184,19 +214,28 @@ model Address {
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 model Order {
-  id          String      @id @default(cuid())
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2)
-  userId      String
-  addressId   String?
-  user        User        @relation(fields: [userId], references: [id])
-  address     Address?    @relation(fields: [addressId], references: [id])
-  items       OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String        @id @default(cuid())
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentMethod     String        @default("COD")
+  razorpayOrderId   String?
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  totalAmount       Decimal       @db.Decimal(10, 2)
+  couponCode        String?
+  discountAmount    Decimal?      @db.Decimal(10, 2)
+  userId            String
+  addressId         String?
+  user              User          @relation(fields: [userId], references: [id])
+  address           Address?      @relation(fields: [addressId], references: [id])
+  items             OrderItem[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
+  @@index([paymentStatus])
+  @@index([razorpayOrderId])
 }
 
 model OrderItem {
@@ -209,4 +248,43 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
+}
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+
+model Coupon {
+  id                String       @id @default(cuid())
+  code              String       @unique
+  discountType      DiscountType
+  discountValue     Decimal      @db.Decimal(10, 2)
+  minOrderAmount    Decimal?     @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?     @db.Decimal(10, 2)
+  usageLimit        Int?
+  usedCount         Int          @default(0)
+  expiresAt         DateTime?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([code])
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int      // 1-5 stars
+  title      String?
+  comment    String
+  isApproved Boolean  @default(false)
+  userId     String
+  productId  String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
 }

@@ -3,6 +3,7 @@ import * as authService from "./auth.service";
 import { success } from "../../utils/response";
 import type { AuthRequest } from "../../middleware/auth.middleware";
 
+
 export async function adminLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tokens = await authService.adminLogin(req.body);
@@ -36,6 +37,42 @@ export async function getMe(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const user = await authService.getMe(req.user!.userId);
     success(res, { user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function customerRegister(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tokens = await authService.customerRegister(req.body);
+    success(res, tokens, "Account created successfully", 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function customerLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tokens = await authService.customerLogin(req.body);
+    success(res, tokens, "Logged in successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await authService.forgotPassword(req.body);
+    success(res, null, "If an account exists with that email, a reset code has been sent");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await authService.resetPassword(req.body);
+    success(res, null, "Password has been reset successfully");
   } catch (err) {
     next(err);
   }
