@@ -16,6 +16,8 @@ export interface ApiOrder {
   paymentMethod: string;
   razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
+  couponCode: string | null;
+  discountAmount: string | null;
   totalAmount: string;
   createdAt: string;
   updatedAt: string;

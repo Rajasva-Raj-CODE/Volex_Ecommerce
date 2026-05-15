@@ -19,6 +19,7 @@ import {
   type CreateAddressInput,
 } from "@/lib/address-api";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payments-api";
+import { validateCoupon } from "@/lib/coupon-api";
 import { ApiError } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -81,6 +82,9 @@ export default function CheckoutClient() {
 
   // Coupon
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   // Order
   const [placing, setPlacing] = useState(false);
@@ -168,6 +172,32 @@ export default function CheckoutClient() {
     } finally {
       setSavingAddress(false);
     }
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code || !cart) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const result = await validateCoupon(code, cart.subtotal);
+      const coupon = { code: result.coupon.code, discountAmount: result.discountAmount };
+      setAppliedCoupon(coupon);
+      sessionStorage.setItem("voltex_coupon", JSON.stringify(coupon));
+      setCouponCode("");
+      toast.success(`Coupon ${coupon.code} applied!`);
+    } catch (err) {
+      setCouponError(err instanceof ApiError ? err.message : "Invalid coupon code");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    sessionStorage.removeItem("voltex_coupon");
+    setCouponCode("");
+    setCouponError("");
   };
 
   const handlePlaceOrder = async () => {
@@ -391,6 +421,53 @@ export default function CheckoutClient() {
 
           {addresses.length === 0 && !showAddressForm && (
             <p className="text-[13px] text-gray-400">No saved addresses. Add one to continue.</p>
+          )}
+        </div>
+
+        {/* ── Coupon Code ── */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <h2 className="text-[17px] font-bold text-gray-900 mb-4">Coupon Code</h2>
+
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div>
+                <span className="text-[13px] font-bold text-emerald-700">{appliedCoupon.code}</span>
+                <p className="text-[12px] text-emerald-600 mt-0.5">
+                  You save {formatPrice(appliedCoupon.discountAmount)}
+                </p>
+              </div>
+              <button
+                onClick={handleRemoveCoupon}
+                className="text-[12px] font-semibold text-red-500 hover:underline cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-2">
+                <input
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponError("");
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                  className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-[13px] text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#49A5A2] uppercase"
+                />
+                <button
+                  onClick={handleApplyCoupon}
+                  disabled={!couponCode.trim() || couponLoading}
+                  className="px-4 h-10 bg-[#49A5A2] text-white font-semibold text-[13px] rounded-lg hover:bg-[#3d8e8b] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {couponLoading ? "..." : "Apply"}
+                </button>
+              </div>
+              {couponError && (
+                <p className="text-red-500 text-[12px] mt-2">{couponError}</p>
+              )}
+            </div>
           )}
         </div>
 

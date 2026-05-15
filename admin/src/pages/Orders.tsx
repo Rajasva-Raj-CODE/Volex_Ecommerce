@@ -22,6 +22,7 @@ import {
 import { listAllOrders, updateOrderStatus, type ApiOrder, type OrderStatus } from "@/lib/orders-api";
 import { ApiError } from "@/lib/api";
 import { PaginationControls } from "@/components/pagination-controls";
+import { OrderDetailSheet } from "@/components/order-detail-sheet";
 
 const STATUS_STYLES: Record<OrderStatus, { variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
   PENDING: { variant: "outline", className: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50" },
@@ -61,6 +62,7 @@ export default function Orders() {
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState<"All" | OrderStatus>("All");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -101,6 +103,7 @@ export default function Orders() {
     try {
       const updated = await updateOrderStatus(order.id, status);
       setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+      if (selectedOrder?.id === updated.id) setSelectedOrder(updated);
       toast.success(`Order ${order.id} marked as ${STATUS_LABEL[status]}`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to update order");
@@ -222,7 +225,7 @@ export default function Orders() {
               filtered.map((order) => {
                 const nextStatuses = NEXT_STATUSES[order.status];
                 return (
-                  <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow key={order.id} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedOrder(order)}>
                     <TableCell className="font-medium text-primary font-mono text-sm">
                       {order.id.slice(0, 8)}…
                     </TableCell>
@@ -243,7 +246,7 @@ export default function Orders() {
                         {STATUS_LABEL[order.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       {nextStatuses && nextStatuses.length > 0 ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger
@@ -285,6 +288,12 @@ export default function Orders() {
         <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
         <PaginationControls page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
       </div>
+
+      <OrderDetailSheet
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}
+      />
     </>
   );
 }

@@ -7,7 +7,7 @@ export const createCouponSchema = z.object({
   minOrderAmount: z.coerce.number().positive().optional(),
   maxDiscountAmount: z.coerce.number().positive().optional(),
   usageLimit: z.coerce.number().int().positive().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullish(),
   isActive: z.boolean().default(true),
 });
 
