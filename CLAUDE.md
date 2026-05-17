@@ -6,7 +6,7 @@
 
 Full-stack electronics e-commerce platform (inspired by Croma / Reliance Digital). TypeScript monorepo with four packages — customer storefront, admin dashboard, REST API server, and mobile app (planned).
 
-**Current State (May 2025):** Server APIs 100% complete. Client and Admin ~85-90% integrated with real APIs. Mobile not started.
+**Current State (May 2026):** Server APIs 100% complete (14 modules, 13 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile not started.
 
 ## Monorepo Structure
 
@@ -18,9 +18,8 @@ Volex_Ecommerce/
 ├── mobile/       # Mobile app         — React Native + Expo (scaffolded only)
 ├── postman/      # Postman collections for API testing
 ├── .github/      # CI/CD (GitHub Actions — lint + build on PRs)
-├── TRACKER.md    # Feature tracker (NOTE: partially outdated)
 ├── AGENTS.md     # Development guidelines & coding conventions
-└── CLAUDE.md     # This file
+└── CLAUDE.md     # This file (Built vs Planned features tracked here)
 ```
 
 Each package is independent — separate `package.json`, separate build, separate deployment. No shared workspace root.
@@ -34,7 +33,7 @@ Each package is independent — separate `package.json`, separate build, separat
 | Server | Express 4.21, Prisma 5.22, PostgreSQL, JWT, bcrypt, Zod, Resend |
 | Storage | Supabase Storage (product/category images) |
 | Payments | Razorpay (test mode — INR currency) |
-| Email | Resend (staff invitations + OTP emails) |
+| Email | Resend (staff invites, OTP, password reset, order confirmation, order status updates) |
 | Deployment | Vercel (all packages) |
 
 ## Commands (run inside each package directory)
@@ -85,39 +84,46 @@ npm run lint                      # ESLint (run per package)
    └─────────────┘ └────────┘ └────────────┘
 ```
 
-## Database Models (Prisma)
+## Database Models (Prisma) — 13 models
 
 | Model | Purpose |
 |-------|---------|
-| User | Admin/Staff/Customer with roles, email, passwordHash |
+| User | Admin/Staff/Customer with roles, email, passwordHash, phone, avatar |
 | Invitation | Staff email invitations (admin creates, staff uses OTP to login) |
-| OtpSession | Time-limited OTP for staff authentication (15min, bcrypt hashed) |
+| OtpSession | Time-limited OTP for staff login AND password reset (15min, bcrypt hashed) |
 | RefreshToken | JWT refresh token rotation (SHA256 hashed) |
 | Category | Hierarchical (self-referencing parentId), 3-level tree |
-| Product | Full product with images[], variants, specs, bankOffers (JSON fields) |
+| Product | Full product with images[], variants, specs, bankOffers (JSON fields), rating + reviewCount aggregate |
 | CartItem | Per-user cart items (unique userId+productId) |
 | WishlistItem | Per-user wishlist (unique userId+productId) |
 | Address | Multiple per user, default flag, used in orders |
-| Order | With status flow, payment tracking, Razorpay fields |
+| Order | With status flow, payment tracking, Razorpay fields, couponCode + discountAmount |
 | OrderItem | Line items with price-at-purchase snapshot |
+| Coupon | Promo codes (PERCENTAGE or FIXED discount, min order, max uses, expiry) |
+| Review | Product reviews + ratings (1-5 stars, status moderation, user + product FKs) |
 
-**Roles:** `ADMIN` (full access), `STAFF` (products/categories/orders), `CUSTOMER` (shopping)
+**Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN/RESET_PASSWORD), `DiscountType` (PERCENTAGE/FIXED), `OrderStatus` (PENDING→CONFIRMED→SHIPPED→DELIVERED, CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED)
 
-## API Endpoints (35+ routes)
+**Roles:** `ADMIN` (full access), `STAFF` (products/categories/orders, no customer/team/settings), `CUSTOMER` (shopping)
+
+## API Endpoints (14 modules, 45+ routes)
 
 | Module | Routes | Auth |
 |--------|--------|------|
-| Auth | login, refresh, logout, me, customer/register, customer/login | Public/Auth |
+| Auth | login, refresh, logout, me, customer/register, customer/login, forgot-password, reset-password | Public/Auth |
 | Invitations | CRUD + OTP request/verify | Admin/Public |
 | Products | list (with filters/search/pagination), get, create, update, delete | Public/Admin+Staff |
 | Categories | tree, flat, admin-paginated, get, create, update, delete | Public/Admin |
 | Cart | get, add, update quantity, remove, clear | Customer |
 | Wishlist | get, add, remove | Customer |
 | Addresses | list, create, update, delete | Customer |
-| Orders | place (with stock tx), my orders, get, list all, update status | Customer/Admin+Staff |
+| Orders | place (with stock tx + email), my orders, get, list all, update status (with email) | Customer/Admin+Staff |
 | Payments | create Razorpay order, verify signature | Customer |
 | Uploads | image upload to Supabase | Admin+Staff |
+| Users | list customers, update profile, change password | Auth/Admin+Staff |
 | Dashboard | summary analytics | Admin+Staff |
+| Coupons | validate (customer), CRUD (admin) | Customer/Admin |
+| Reviews | list by product (public), create (customer), moderate + delete (admin) | Public/Customer/Admin |
 
 ## Authentication Flows
 
@@ -135,61 +141,99 @@ Each package has `.env.example`. Key variables:
 - **Client:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`
 - **Admin:** `VITE_API_URL`, `VITE_SUPABASE_*`
 
-## What's Complete
+## ✅ What's Built (production-ready)
 
-- All server APIs (auth, products, categories, cart, wishlist, orders, payments, uploads, dashboard)
-- Client storefront (home, categories, product detail, cart, checkout, orders, wishlist, addresses, profile)
-- Admin panel (dashboard, products CRUD, categories CRUD, orders management, customers, team invitations)
-- Razorpay payment integration (test mode)
-- Supabase image uploads
-- Email notifications (staff invite + OTP)
-- JWT auth with refresh token rotation
-- Role-based access control
-- Rate limiting & security headers
-- CI/CD pipeline (GitHub Actions — lint + build)
+### Server (all 14 modules implemented)
+- [x] Auth — admin login, customer register/login, JWT access + refresh rotation, **forgot-password + reset-password (OTP-based)**
+- [x] Staff invitations + OTP login flow
+- [x] Products — full CRUD + filters (category, brand, price range, in-stock), search, pagination, sort
+- [x] Categories — tree + flat + admin views, CRUD with cascade protection
+- [x] Cart — add/update/remove/clear, atomic operations
+- [x] Wishlist — list/add/remove
+- [x] Addresses — CRUD with default flag
+- [x] Orders — atomic stock tx (no overselling), customer + admin views, status transitions, **confirmation + status update emails**
+- [x] Payments — Razorpay order creation + HMAC signature verification
+- [x] Uploads — Supabase Storage (JPEG/PNG/WebP/GIF, 5MB cap)
+- [x] Users — list customers, **update profile (name/phone/avatar), change password**
+- [x] Dashboard — admin + staff summary analytics
+- [x] **Coupons — validate at checkout, admin CRUD (PERCENTAGE/FIXED, min order, max uses, expiry)**
+- [x] **Reviews — list by product, customer create, admin moderation + delete, rating aggregation on Product**
+- [x] Rate limiting (general/auth/OTP), Helmet, CORS, Zod validation
+- [x] Email service — staff invite, OTP, password reset, order confirmation, order status updates
 
-## What's Missing for Full Production
+### Client storefront (all routes wired with real APIs)
+- [x] Home — hero, category slider, bank offers, multiple product showcases, brands
+- [x] Search — query, filters, pagination
+- [x] Category + subcategory listing pages
+- [x] Product detail — gallery, specs, variants, bank offers, **reviews + submit modal**, related products
+- [x] Cart — add/update/remove, subtotal
+- [x] Checkout — address selection, **coupon apply**, Razorpay integration, success page
+- [x] Login — admin/customer login, customer register, **forgot password OTP flow, reset password**
+- [x] My Account hub
+- [x] Account/Profile — view + edit
+- [x] Account/Address — CRUD with default flag
+- [x] Account/Orders — list page + **detail page** with items, status, payment, address
+- [x] Account/Wishlist
+- [x] Account/Notifications — UI built (currently mock data — needs server notifications API)
+- [x] Account/Settings — UI shell (handlers not wired yet)
 
-### Critical (Core E-Commerce)
-- [ ] Forgot password / password reset flow (server + client + admin)
-- [ ] Customer profile update API (name, phone, avatar)
-- [ ] Order confirmation emails (post-purchase)
-- [ ] Shipping status update emails
-- [ ] Coupon/promo code system (server API + client/admin UI)
-- [ ] Product reviews & ratings (server API + client submission UI)
-- [ ] Order detail page on client (currently list-only)
-- [ ] Admin order detail modal/page
-
-### Important (User Experience)
-- [ ] Search suggestions/autocomplete API
-- [ ] Recently viewed products tracking
-- [ ] Client notifications page (currently placeholder)
-- [ ] Client settings page (currently placeholder)
-- [ ] Admin settings page handlers (UI built, not wired)
-- [ ] Admin dashboard chart with real time-range data
-- [ ] Dark/light mode toggle on client (next-themes installed, no UI)
-- [ ] Pincode/delivery availability check
-- [ ] Bulk operations in admin (export CSV, bulk status update)
-
-### Nice to Have (Enhancement)
-- [ ] Social login (Google OAuth)
-- [ ] Product comparison feature
-- [ ] EMI calculator
-- [ ] Razorpay webhook handler (refunds, disputes)
-- [ ] Real-time admin notifications
-- [ ] Audit log for admin actions
-- [ ] Staff role editing/deactivation (currently invite-only)
-- [ ] sitemap.xml / robots.txt generation
-- [ ] PWA support on client
-- [ ] Share product functionality
+### Admin dashboard (all 11 pages wired)
+- [x] Login — admin email/password + staff OTP flow
+- [x] Dashboard — KPI cards, recent orders, role-aware (admin vs staff view)
+- [x] Products — list with search/filter/pagination, add, edit (with image uploads + JSON editors)
+- [x] Categories — tree CRUD with image uploads
+- [x] Orders — list with inline status updates, expandable detail sheet
+- [x] Customers — list with search/filter
+- [x] Team — staff invitations (send via Resend, list, revoke)
+- [x] **Coupons — full CRUD with discount type, min order, max uses, expiry**
+- [x] **Reviews — list all reviews, moderation (approve/reject), delete**
+- [x] Settings — password change + theme picker wired (store info handlers partial)
 
 ### Infrastructure
-- [ ] Docker / docker-compose setup
-- [ ] Automated test suite (Jest/Vitest)
-- [ ] Error tracking (Sentry)
+- [x] Vercel deployments for server, client, admin
+- [x] CI/CD (GitHub Actions — lint + build on PRs)
+- [x] 5 Prisma migrations (init, customer role, order payment fields, product detail fields, phase1 features)
+
+## ⏳ What's Planned (not built yet)
+
+### 🔴 Critical (next sprint)
+- [ ] **Fix production deployment** — set `CLIENT_URL` + `ADMIN_URL` + `NODE_ENV=production` on Vercel server project (currently CORS-blocked)
+- [ ] **Razorpay webhook handler** — refunds, disputes, async payment state sync
+- [ ] **Client notifications API** — replace mock data with real notifications (order updates, price drops)
+- [ ] **Client settings save handlers** — wire toggles to backend preferences
+- [ ] **Admin Settings store info handlers** — wire remaining sections to API
+
+### 🟠 Important (user experience)
+- [ ] Search suggestions/autocomplete API + UI
+- [ ] Recently viewed products tracking
+- [ ] Order tracking timeline UI on order detail
+- [ ] Pincode / delivery availability check
+- [ ] Admin order detail page (full page, not just sheet)
+- [ ] Admin dashboard chart with time-range picker (7d/30d/90d/1y)
+- [ ] Bulk operations in admin (CSV export, bulk status update)
+- [ ] Dark/light mode toggle UI on client (`next-themes` already installed)
+- [ ] Staff role editing / deactivation (currently invite-only)
+
+### 🟡 Nice to have
+- [ ] Social login (Google OAuth)
+- [ ] Product comparison
+- [ ] EMI calculator
+- [ ] Real-time admin notifications (SSE)
+- [ ] Audit log for admin actions
+- [ ] Share product (Web Share API)
+- [ ] PWA support on client
+- [ ] sitemap.xml / robots.txt
+
+### 🔧 Infrastructure
+- [ ] **Error tracking (Sentry)** on all 3 packages
+- [ ] **Automated test suite (Vitest)** — start with order placement transaction + auth flows
 - [ ] Production monitoring & alerts
 - [ ] Database backup automation
 - [ ] CDN/caching strategy
+- [ ] Docker / docker-compose for local dev
+
+### 📱 Mobile (not started)
+- [ ] React Native + Expo app — currently only scaffolded with placeholder `index.ts`
 
 ## Git Workflow
 

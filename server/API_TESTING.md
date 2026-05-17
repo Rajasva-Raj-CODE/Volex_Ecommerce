@@ -1,23 +1,33 @@
 # VolteX API — Testing Guide
 
-> Base URL: `http://localhost:8000`
+> Base URL (local): `http://localhost:8000`
+> Base URL (prod): `https://volex-ecommerce-4xsz.vercel.app`
 > All protected routes need: `Authorization: Bearer <accessToken>`
-> Run `npm run dev` in `/server` before testing.
+> Run `npm run dev` in `/server` before testing locally.
 
 ---
 
 ## Test Order (follow this sequence)
 
 ```
-1. Admin Login          → get accessToken
-2. Create Category      → get categoryId
-3. Create Product       → get productId
-4. Invite Staff         → staff gets OTP email
-5. Staff OTP Login      → get staff accessToken
-6. Cart operations      → add/update/remove
-7. Wishlist operations  → add/remove
-8. Place Order          → need addressId first
-9. Admin manages order  → update status
+1.  Admin Login           → get accessToken
+2.  Customer Register     → get customer accessToken
+3.  Forgot/Reset password → OTP flow via email
+4.  Profile update        → update name/phone
+5.  Create Category       → get categoryId
+6.  Upload image          → get image URL for product
+7.  Create Product        → get productId
+8.  Invite Staff          → staff gets OTP email
+9.  Staff OTP Login       → get staff accessToken
+10. Cart operations       → add/update/remove
+11. Wishlist operations   → add/remove
+12. Create Address        → get addressId
+13. Apply Coupon          → validate at checkout
+14. Place Order           → with optional coupon
+15. Razorpay payment      → create order + verify signature
+16. Submit Review         → for purchased product
+17. Admin moderates       → orders, reviews, coupons
+18. Dashboard summary     → admin/staff analytics
 ```
 
 ---
@@ -74,6 +84,56 @@ curl -s -X POST http://localhost:8000/api/auth/logout \
   -H "Authorization: Bearer <accessToken>" \
   -d '{ "refreshToken": "<refreshToken>" }' | python3 -m json.tool
 ```
+
+---
+
+### 1.5 Customer Register
+```bash
+curl -s -X POST http://localhost:8000/api/auth/customer/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "customer@example.com",
+    "password": "Customer@123!",
+    "name": "Test Customer"
+  }' | python3 -m json.tool
+```
+**Save:** `accessToken` as `<customerToken>` (auto-logged in on register).
+
+---
+
+### 1.6 Customer Login
+```bash
+curl -s -X POST http://localhost:8000/api/auth/customer/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "customer@example.com",
+    "password": "Customer@123!"
+  }' | python3 -m json.tool
+```
+
+---
+
+### 1.7 Forgot Password — Request OTP
+```bash
+curl -s -X POST http://localhost:8000/api/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "customer@example.com" }' | python3 -m json.tool
+```
+**What happens:** Customer receives a 6-digit OTP email (15-min expiry).
+
+---
+
+### 1.8 Reset Password (with OTP)
+```bash
+curl -s -X POST http://localhost:8000/api/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "customer@example.com",
+    "otp": "123456",
+    "newPassword": "NewPass@123!"
+  }' | python3 -m json.tool
+```
+**Replace** `123456` with the real OTP from the email.
 
 ---
 
@@ -473,6 +533,7 @@ curl -s -X PUT http://localhost:8000/api/orders/<orderId>/status \
   -H "Content-Type: application/json" \
   -d '{ "status": "CONFIRMED" }' | python3 -m json.tool
 ```
+**What happens:** Customer receives an order status update email (fire-and-forget).
 
 **Valid status flow:**
 ```
@@ -482,7 +543,230 @@ PENDING → CANCELLED  (any stage before DELIVERED)
 
 ---
 
-## 8. ERROR CASES TO TEST
+## 8. ADDRESSES
+
+### 8.1 List My Addresses
+```bash
+curl -s http://localhost:8000/api/addresses \
+  -H "Authorization: Bearer <customerToken>" | python3 -m json.tool
+```
+
+### 8.2 Update Address
+```bash
+curl -s -X PUT http://localhost:8000/api/addresses/<addressId> \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{ "label": "Office", "isDefault": false }' | python3 -m json.tool
+```
+
+### 8.3 Delete Address
+```bash
+curl -s -X DELETE http://localhost:8000/api/addresses/<addressId> \
+  -H "Authorization: Bearer <customerToken>" | python3 -m json.tool
+```
+
+---
+
+## 9. USERS (Profile + Password)
+
+### 9.1 Update Profile
+```bash
+curl -s -X PUT http://localhost:8000/api/users/profile \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Name",
+    "phone": "+919876543210",
+    "avatar": "https://example.com/avatar.jpg"
+  }' | python3 -m json.tool
+```
+
+### 9.2 Change Password
+```bash
+curl -s -X PUT http://localhost:8000/api/users/change-password \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "Customer@123!",
+    "newPassword": "NewPass@456!"
+  }' | python3 -m json.tool
+```
+
+### 9.3 Admin: List Customers
+```bash
+curl -s "http://localhost:8000/api/users?search=customer&page=1&limit=20" \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+
+---
+
+## 10. COUPONS
+
+### 10.1 Admin: Create Coupon
+```bash
+curl -s -X POST http://localhost:8000/api/coupons \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "WELCOME10",
+    "discountType": "PERCENTAGE",
+    "discountValue": 10,
+    "minOrderAmount": 1000,
+    "maxUses": 100,
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "isActive": true
+  }' | python3 -m json.tool
+```
+**Save:** `id` as `<couponId>`
+
+### 10.2 Admin: List Coupons
+```bash
+curl -s http://localhost:8000/api/coupons \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+
+### 10.3 Customer: Validate Coupon at Checkout
+```bash
+curl -s -X POST http://localhost:8000/api/coupons/validate \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "WELCOME10",
+    "subtotal": 5000
+  }' | python3 -m json.tool
+```
+**Returns:** `discountAmount` to apply at checkout.
+
+### 10.4 Admin: Update Coupon
+```bash
+curl -s -X PUT http://localhost:8000/api/coupons/<couponId> \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{ "isActive": false }' | python3 -m json.tool
+```
+
+### 10.5 Admin: Delete Coupon
+```bash
+curl -s -X DELETE http://localhost:8000/api/coupons/<couponId> \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+
+---
+
+## 11. REVIEWS
+
+### 11.1 Public: List Product Reviews
+```bash
+curl -s http://localhost:8000/api/reviews/products/<iphone16Id> | python3 -m json.tool
+```
+
+### 11.2 Customer: Submit Review
+```bash
+curl -s -X POST http://localhost:8000/api/reviews/products/<iphone16Id> \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rating": 5,
+    "comment": "Excellent product, fast delivery!"
+  }' | python3 -m json.tool
+```
+**Save:** `id` as `<reviewId>`
+
+### 11.3 Admin: List All Reviews (for moderation)
+```bash
+curl -s "http://localhost:8000/api/reviews?status=PENDING" \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+
+### 11.4 Admin: Approve/Reject Review
+```bash
+curl -s -X PUT http://localhost:8000/api/reviews/<reviewId>/status \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": "APPROVED" }' | python3 -m json.tool
+```
+**Valid values:** `APPROVED`, `REJECTED`, `PENDING`
+
+### 11.5 Admin: Delete Review
+```bash
+curl -s -X DELETE http://localhost:8000/api/reviews/<reviewId> \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+
+---
+
+## 12. PAYMENTS (Razorpay)
+
+### 12.1 Create Razorpay Order
+```bash
+curl -s -X POST http://localhost:8000/api/payments/razorpay/order \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "addressId": "<addressId>",
+    "items": [
+      { "productId": "<iphone16Id>", "quantity": 1 }
+    ],
+    "couponCode": "WELCOME10"
+  }' | python3 -m json.tool
+```
+**Returns:** `keyId`, `razorpayOrderId`, `amount` (paise), `currency` (INR).
+**Save:** `razorpayOrderId` for the verify step.
+
+### 12.2 Verify Payment Signature (places order on success)
+```bash
+curl -s -X POST http://localhost:8000/api/payments/razorpay/verify \
+  -H "Authorization: Bearer <customerToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "razorpayOrderId": "<razorpayOrderId>",
+    "razorpayPaymentId": "<paymentId-from-checkout>",
+    "razorpaySignature": "<signature-from-checkout>",
+    "addressId": "<addressId>",
+    "items": [
+      { "productId": "<iphone16Id>", "quantity": 1 }
+    ],
+    "couponCode": "WELCOME10"
+  }' | python3 -m json.tool
+```
+**What happens:** HMAC-SHA256 signature verified → order created with `PaymentStatus = PAID`. Unique constraint on `paymentId` prevents reuse.
+
+---
+
+## 13. UPLOADS
+
+### 13.1 Upload Product Image (Admin/Staff)
+```bash
+# Read image as base64 first
+IMG_B64=$(base64 -i ./my-product.jpg)
+
+curl -s -X POST http://localhost:8000/api/uploads/image \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"file\": \"data:image/jpeg;base64,${IMG_B64}\",
+    \"filename\": \"my-product.jpg\",
+    \"folder\": \"products\"
+  }" | python3 -m json.tool
+```
+**Returns:** `url` (public Supabase URL), `path`, `bucket`.
+**Limits:** Max 5MB. Allowed: JPEG, PNG, WebP, GIF.
+
+---
+
+## 14. DASHBOARD
+
+### 14.1 Admin/Staff: Summary
+```bash
+curl -s http://localhost:8000/api/dashboard/summary \
+  -H "Authorization: Bearer <accessToken>" | python3 -m json.tool
+```
+**Returns (admin):** Total revenue, orders, customers, products, low stock items, recent orders.
+**Returns (staff):** Total products, low stock count, new products this month.
+
+---
+
+## 15. ERROR CASES TO TEST
 
 ### Wrong password → 401
 ```bash
@@ -521,7 +805,7 @@ curl -s -X POST http://localhost:8000/api/products \
 
 ---
 
-## 9. QUICK REFERENCE — All Endpoints
+## 16. QUICK REFERENCE — All Endpoints
 
 | Method | Endpoint | Auth | Role |
 |--------|----------|------|------|
@@ -530,6 +814,10 @@ curl -s -X POST http://localhost:8000/api/products \
 | POST | /api/auth/refresh | — | — |
 | POST | /api/auth/logout | ✓ | any |
 | GET | /api/auth/me | ✓ | any |
+| POST | /api/auth/customer/register | — | — |
+| POST | /api/auth/customer/login | — | — |
+| POST | /api/auth/forgot-password | — | — |
+| POST | /api/auth/reset-password | — | — |
 | POST | /api/invitations | ✓ | ADMIN |
 | GET | /api/invitations | ✓ | ADMIN |
 | DELETE | /api/invitations/:id | ✓ | ADMIN |
@@ -537,6 +825,7 @@ curl -s -X POST http://localhost:8000/api/products \
 | POST | /api/invitations/auth/verify-otp | — | — |
 | GET | /api/categories | — | — |
 | GET | /api/categories/flat | — | — |
+| GET | /api/categories/admin | ✓ | ADMIN/STAFF |
 | GET | /api/categories/:id | — | — |
 | POST | /api/categories | ✓ | ADMIN |
 | PUT | /api/categories/:id | ✓ | ADMIN |
@@ -554,18 +843,43 @@ curl -s -X POST http://localhost:8000/api/products \
 | GET | /api/wishlist | ✓ | any |
 | POST | /api/wishlist | ✓ | any |
 | DELETE | /api/wishlist/:productId | ✓ | any |
+| GET | /api/addresses | ✓ | any |
+| POST | /api/addresses | ✓ | any |
+| PUT | /api/addresses/:id | ✓ | any |
+| DELETE | /api/addresses/:id | ✓ | any |
 | POST | /api/orders | ✓ | any |
 | GET | /api/orders/my | ✓ | any |
 | GET | /api/orders/:id | ✓ | any |
 | GET | /api/orders | ✓ | ADMIN/STAFF |
 | PUT | /api/orders/:id/status | ✓ | ADMIN/STAFF |
+| PUT | /api/users/profile | ✓ | any |
+| PUT | /api/users/change-password | ✓ | any |
+| GET | /api/users | ✓ | ADMIN/STAFF |
+| POST | /api/coupons/validate | ✓ | any |
+| GET | /api/coupons | ✓ | ADMIN/STAFF |
+| POST | /api/coupons | ✓ | ADMIN |
+| PUT | /api/coupons/:id | ✓ | ADMIN |
+| DELETE | /api/coupons/:id | ✓ | ADMIN |
+| GET | /api/reviews/products/:productId | — | — |
+| POST | /api/reviews/products/:productId | ✓ | any |
+| GET | /api/reviews | ✓ | ADMIN/STAFF |
+| PUT | /api/reviews/:id/status | ✓ | ADMIN/STAFF |
+| DELETE | /api/reviews/:id | ✓ | ADMIN |
+| POST | /api/payments/razorpay/order | ✓ | any |
+| POST | /api/payments/razorpay/verify | ✓ | any |
+| POST | /api/uploads/image | ✓ | ADMIN/STAFF |
+| GET | /api/dashboard/summary | ✓ | ADMIN/STAFF |
 
 ---
 
 ## Notes
 
-- **Address API** — `GET/POST/PUT/DELETE /api/addresses` — all built.
 - **OTP rate limit** — max 5 requests per 15 minutes per IP.
 - **Auth rate limit** — max 10 login attempts per 15 minutes per IP.
 - **Tokens** — access token expires in 15 minutes. Use refresh endpoint to get a new one.
+- **Refresh tokens** — 7-day expiry, SHA256-hashed in DB, rotated on each use.
 - **Slugs** — auto-generated from product/category name. `"Apple iPhone 16 Pro"` → `"apple-iphone-16-pro"`
+- **Order emails** — order confirmation fires on placement; status update fires on admin status change. Both are fire-and-forget (won't block order creation if email fails).
+- **Razorpay amounts** — server-side, amounts are computed in paise (₹100 = `10000`). HMAC signature verification prevents tampering.
+- **Coupons** — `discountType` is `PERCENTAGE` or `FIXED`. `minOrderAmount` blocks coupons on small carts. `maxUses` is a soft cap (DB unique constraint enforces real limit).
+- **Reviews** — server aggregates `rating` and `reviewCount` on the Product when status changes to APPROVED.

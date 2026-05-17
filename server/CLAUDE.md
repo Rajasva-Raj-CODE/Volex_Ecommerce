@@ -6,7 +6,7 @@
 
 Express.js REST API serving both the customer storefront and admin dashboard. All core e-commerce APIs are implemented — auth, products, categories, cart, wishlist, orders, payments, uploads, and dashboard analytics.
 
-**Status:** Production-ready core. Missing: reviews API, coupons, forgot-password, order emails, profile update, automated tests.
+**Status (May 2026):** Production-deployed on Vercel. All 14 feature modules implemented including reviews, coupons, forgot-password, order emails, and profile update. Missing: Razorpay webhooks, search autocomplete, audit logs, automated tests.
 
 ## Tech Stack
 
@@ -54,27 +54,30 @@ server/
 │   │   ├── error.middleware.ts      # Global error handler (ZodError, AppError, 500)
 │   │   ├── validate.middleware.ts   # validate(zodSchema) — request body validation
 │   │   └── rateLimiter.ts          # general (100/min), auth (10/15min), otp (5/15min)
-│   ├── modules/                    # Feature modules (routes → controller → service → schema)
-│   │   ├── auth/                   # Login, refresh, logout, me, customer register/login
+│   ├── modules/                    # 14 feature modules (routes → controller → service → schema)
+│   │   ├── auth/                   # Login, refresh, logout, me, customer register/login, forgot/reset password
 │   │   ├── invitations/            # Staff invitations + OTP auth
 │   │   ├── products/               # CRUD + search/filter/paginate
 │   │   ├── categories/             # CRUD + tree/flat views
 │   │   ├── cart/                   # Add, update quantity, remove, clear
 │   │   ├── wishlist/               # Add, remove, list
 │   │   ├── addresses/              # CRUD with default flag
-│   │   ├── orders/                 # Place (with stock tx), list, status updates
+│   │   ├── orders/                 # Place (atomic stock tx), list, status updates, fire confirmation/status emails
 │   │   ├── payments/               # Razorpay order creation + signature verification
 │   │   ├── uploads/                # Image upload to Supabase (base64)
-│   │   ├── users/                  # List customers (admin)
-│   │   └── dashboard/              # Summary analytics
+│   │   ├── users/                  # List customers (admin), update profile, change password
+│   │   ├── dashboard/              # Summary analytics
+│   │   ├── coupons/                # Validate (customer), CRUD (admin) — PERCENTAGE/FIXED, expiry, max uses
+│   │   └── reviews/                # List by product (public), create (customer), moderation + delete (admin)
 │   ├── services/
-│   │   └── email.service.ts        # Resend wrapper — staff invite + OTP emails
+│   │   └── email.service.ts        # Resend wrapper — staff invite, OTP, password reset, order confirmation, order status
 │   └── utils/
 │       ├── jwt.ts                  # signAccessToken, signRefreshToken, verify*
 │       ├── otp.ts                  # generateOtp, hashOtp, verifyOtp, otpExpiresAt
 │       └── response.ts            # success() and error() response helpers
 ├── prisma/
-│   ├── schema.prisma               # Full database schema (9 models, 4 enums)
+│   ├── schema.prisma               # Full database schema (13 models, 5 enums)
+│   ├── migrations/                 # 5 migrations (init, customer role, order payment, product detail, phase1)
 │   └── seed.ts                     # Seeds admin user
 ├── dist/                           # Compiled output (DO NOT EDIT)
 ├── .env / .env.example
@@ -105,6 +108,8 @@ modules/{feature}/
 | GET | /me | Bearer | Get current user profile |
 | POST | /customer/register | Public | Customer registration → auto-login |
 | POST | /customer/login | Public | Customer email+password login |
+| POST | /forgot-password | Public (rate limited) | Request password reset OTP via email |
+| POST | /reset-password | Public (rate limited) | Reset password using OTP |
 
 ### Invitations (`/api/invitations`)
 | Method | Path | Auth | Description |
@@ -183,38 +188,60 @@ modules/{feature}/
 |--------|------|-------------|
 | POST | /image | Upload base64 image to Supabase (JPEG/PNG/WebP/GIF, max 5MB) |
 
-### Users (`/api/users`) — Admin/Staff only
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | / | List customers with search + pagination |
+### Users (`/api/users`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| PUT | /profile | Auth | Update own profile (name, phone, avatar) |
+| PUT | /change-password | Auth | Change own password (current → new) |
+| GET | / | Admin/Staff | List customers with search + pagination |
 
 ### Dashboard (`/api/dashboard`) — Admin/Staff only
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | /summary | Revenue, orders, customers, products, low stock, recent orders |
 
+### Coupons (`/api/coupons`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | /validate | Customer | Validate a coupon code against cart subtotal → returns discount |
+| GET | / | Admin/Staff | List all coupons with pagination |
+| POST | / | Admin | Create coupon (code, type, value, minOrder, maxUses, expiry) |
+| PUT | /:id | Admin | Update coupon |
+| DELETE | /:id | Admin | Delete coupon |
+
+### Reviews (`/api/reviews`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /products/:productId | Public | List approved reviews for a product |
+| POST | /products/:productId | Customer | Submit a review (rating 1-5 + comment) |
+| GET | / | Admin/Staff | List all reviews (with status filter) for moderation |
+| PUT | /:id/status | Admin/Staff | Approve/reject a review |
+| DELETE | /:id | Admin | Delete a review |
+
 ### Health
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | /health | API health check |
 
-## Database Schema
+## Database Schema (13 models)
 
 ```
 User ──┬── CartItem
        ├── WishlistItem
-       ├── Address ──── Order ──── OrderItem ──── Product
-       ├── Order
+       ├── Address ──── Order ──── OrderItem ──── Product ──── Review
+       ├── Order (couponCode, discountAmount)
        ├── RefreshToken
+       ├── Review
        └── Invitation
 
 Category ──── Product (categoryId FK)
-Category ──── Category (parentId self-ref, hierarchical)
+Category ──── Category (parentId self-ref, 3-level hierarchical)
 
-OtpSession (standalone, linked by email)
+Coupon (standalone, applied via couponCode on Order)
+OtpSession (standalone, linked by email — STAFF_LOGIN or RESET_PASSWORD)
 ```
 
-**Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN), `OrderStatus` (PENDING/CONFIRMED/SHIPPED/DELIVERED/CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED)
+**Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN/RESET_PASSWORD), `DiscountType` (PERCENTAGE/FIXED), `OrderStatus` (PENDING/CONFIRMED/SHIPPED/DELIVERED/CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED)
 
 ## Authentication Architecture
 
@@ -321,15 +348,59 @@ RAZORPAY_KEY_SECRET=
 6. Server verifies HMAC-SHA256 signature
 7. If valid, places order with PAID status (unique constraint on paymentId prevents reuse)
 
-## What's NOT Implemented Yet
+## ✅ What's Built
 
-- Product reviews/ratings API
-- Coupon/promo code system
-- Forgot password / password reset
-- Customer profile update (name, phone, avatar)
-- Order confirmation/shipping emails
-- Search suggestions/autocomplete
-- Razorpay webhook handler
-- Bulk operations (bulk delete, bulk status update)
-- Automated test suite (Jest/Vitest)
-- Docker/docker-compose
+### Core e-commerce APIs (all 14 modules)
+- [x] Auth — admin/customer login, JWT refresh rotation, **forgot-password + reset-password** via OTP
+- [x] Staff invitations + OTP login
+- [x] Products — full CRUD + search/filter/pagination
+- [x] Categories — tree/flat/admin, CRUD with cascade protection
+- [x] Cart, Wishlist, Addresses — full CRUD per user
+- [x] Orders — atomic stock transaction, customer + admin views, status transitions
+- [x] Payments — Razorpay order + HMAC verification
+- [x] Uploads — Supabase Storage with MIME/size validation
+- [x] Users — list customers (admin), **update profile**, **change password**
+- [x] Dashboard — admin + staff summary
+- [x] **Coupons** — validate at checkout + admin CRUD
+- [x] **Reviews** — public list, customer submit, admin moderation
+
+### Emails (Resend)
+- [x] Staff invitation email
+- [x] OTP email (staff login)
+- [x] Password reset email
+- [x] Order confirmation email (fire-and-forget on order placement)
+- [x] Order status update email (fire-and-forget on status change)
+
+### Infrastructure
+- [x] Helmet, CORS, rate limiting (general/auth/OTP)
+- [x] Zod validation on all inputs
+- [x] Global error handler (AppError, ZodError, 500 fallback)
+- [x] 5 Prisma migrations
+- [x] Vercel serverless deployment (`vercel.json`)
+- [x] CI/CD (GitHub Actions lint + build)
+
+## ⏳ What's Planned
+
+### 🔴 Critical
+- [ ] **Razorpay webhook handler** — refunds, disputes, async payment state sync
+- [ ] **Notifications API** — backend to power client notifications page (currently mocked)
+
+### 🟠 Important
+- [ ] Search suggestions/autocomplete endpoint
+- [ ] Recently viewed products tracking (per user)
+- [ ] Bulk operations (bulk delete, bulk status update, CSV export)
+- [ ] Audit log for admin actions
+- [ ] Staff role editing / deactivation API
+
+### 🔧 Quality / safety
+- [ ] **Error tracking (Sentry)** — currently zero visibility into prod errors
+- [ ] **Automated test suite (Vitest)** — start with order placement transaction + auth flows
+- [ ] Remove `console.error` calls from order email failures — pipe to Sentry instead
+- [ ] Tune rate limits per route (stricter on `/payments/*`, looser on read-only)
+- [ ] Database backup automation (managed Postgres snapshots or scheduled `pg_dump`)
+
+### 🟡 Nice to have
+- [ ] Docker / docker-compose for local dev (Vercel is prod, but devs without a Postgres are blocked)
+- [ ] OpenAPI spec + Swagger UI at `/api/docs`
+- [ ] EMI calculator endpoint
+- [ ] Social login (Google OAuth)

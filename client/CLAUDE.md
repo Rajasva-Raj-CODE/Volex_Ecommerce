@@ -6,7 +6,7 @@
 
 Customer-facing storefront for an electronics e-commerce platform. Built with Next.js 16 App Router. Most pages are API-integrated — auth, cart, checkout, orders, wishlist, addresses all work with the real backend. Some homepage sections still use hardcoded data.
 
-**Status:** ~85% integrated. Core shopping flow (browse → cart → checkout → order) is fully functional.
+**Status (May 2026):** Fully API-integrated across all customer flows including reviews, coupons, forgot password, and order detail. Notifications and Settings UIs are built but Notifications uses mock data (no notifications API) and Settings save handlers are not wired. Deployed on Vercel.
 
 ## Tech Stack
 
@@ -51,12 +51,13 @@ client/
 │   │   └── [categorySlug]/[subcategorySlug]/page.tsx  # Subcategory listing
 │   ├── (account)/                          # Protected account group
 │   │   ├── layout.tsx                      # Account sidebar layout
-│   │   ├── profile/page.tsx
-│   │   ├── address/page.tsx
-│   │   ├── orders/page.tsx
+│   │   ├── profile/page.tsx                # Edit name, phone, avatar
+│   │   ├── address/page.tsx                # Address CRUD
+│   │   ├── orders/page.tsx                 # Order list
+│   │   ├── orders/[orderId]/page.tsx       # Order detail (items, address, payment, status)
 │   │   ├── wishlist/page.tsx
-│   │   ├── notifications/page.tsx          # ⚠️ Placeholder only
-│   │   └── settings/page.tsx               # ⚠️ Placeholder only
+│   │   ├── notifications/page.tsx          # ⚠️ UI built, uses mock data (no notifications API yet)
+│   │   └── settings/page.tsx               # ⚠️ UI built, save handlers not wired
 │   ├── my-account/page.tsx                 # Redirect to profile
 │   ├── tools/image-extractor/page.tsx      # Utility (not core)
 │   └── api/                                # Next.js API routes (utility)
@@ -93,7 +94,9 @@ client/
 │   │   ├── ProductInfo.tsx         # Price, variants, actions
 │   │   ├── ProductSpecifications.tsx # Specs accordion
 │   │   ├── StickyBottomBar.tsx     # Floating cart/wishlist/buy bar
-│   │   └── RelatedProducts.tsx     # Related items carousel
+│   │   ├── RelatedProducts.tsx     # Related items carousel
+│   │   ├── ReviewSection.tsx       # Display reviews with rating breakdown
+│   │   └── ReviewSubmitModal.tsx   # Customer review submission form
 │   ├── cart/CartClient.tsx         # Full cart UI
 │   ├── checkout/
 │   │   ├── CheckoutClient.tsx      # Address + payment + order summary
@@ -107,13 +110,15 @@ client/
 │
 ├── lib/
 │   ├── api.ts              # Base fetch wrapper + ApiError class
-│   ├── auth-api.ts         # authedApiRequest — Bearer token + auto-refresh on 401
+│   ├── auth-api.ts         # authedApiRequest + login/register/logout/refresh/forgot/reset password helpers
 │   ├── catalog-api.ts      # Categories (tree/flat) + Products (search/filter/paginate)
 │   ├── cart-api.ts          # Cart CRUD
 │   ├── orders-api.ts        # Orders (my, detail, create)
 │   ├── payments-api.ts      # Razorpay order + verify
 │   ├── address-api.ts       # Address CRUD
 │   ├── wishlist-api.ts      # Wishlist CRUD
+│   ├── coupon-api.ts        # Validate coupon at checkout
+│   ├── reviews-api.ts       # List + submit product reviews
 │   ├── product-data.ts      # Mock product fallback data
 │   ├── cart-events.ts       # Custom event dispatching for cart badge sync
 │   ├── types.ts             # Shared TypeScript interfaces
@@ -188,7 +193,9 @@ authedApiRequest<T>(path, options) // Adds Bearer token, auto-refresh on 401
 | payments-api | POST /payments/razorpay/order, /payments/razorpay/verify |
 | address-api | GET/POST/PUT/DELETE /addresses |
 | wishlist-api | GET/POST/DELETE /wishlist |
-| auth-api | POST /auth/customer/login, /register, /logout, /refresh, GET /auth/me |
+| coupon-api | POST /coupons/validate (at checkout) |
+| reviews-api | GET /reviews/products/:id, POST /reviews/products/:id |
+| auth-api | POST /auth/customer/login, /register, /logout, /refresh, /forgot-password, /reset-password, GET /auth/me, PUT /users/profile, PUT /users/change-password |
 
 ## Styling
 
@@ -215,32 +222,57 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_...
 ```
 
-## What's Working
+## ✅ What's Built
 
-- Home page with real category data from API
-- Product listing with filters, sorting, pagination
-- Product detail with specs, images, variants, bank offers
-- Full auth flow (login, register, guest, token refresh)
-- Cart operations (add, update, remove, clear)
-- Checkout with address selection + Razorpay payment
-- Order history listing
-- Wishlist CRUD
-- Address management
-- Search with API integration
-- Responsive design (mobile + desktop)
-- Navbar with mega-menu, mobile drawer, cart badge
+### Pages (all wired with real APIs)
+- [x] Home — hero, real category slider, bank offers, multiple product showcases, brands carousel
+- [x] Search — query, filters, pagination
+- [x] Category + subcategory listing — filters (brand, price, stock), sorting, pagination
+- [x] Product detail — gallery, specs, variants, bank offers, **reviews + submit modal**, related products
+- [x] Cart — add/update/remove, subtotal, move-to-wishlist
+- [x] Checkout — address selection, **coupon validation**, Razorpay integration, order summary
+- [x] Checkout success — order confirmation with ID, items, address
+- [x] Login — customer login, customer register, guest checkout, **forgot password OTP flow + reset password**
+- [x] My Account hub
+- [x] Account/Profile — edit name, phone, avatar
+- [x] Account/Address — CRUD with default flag
+- [x] Account/Orders — list page
+- [x] Account/Orders/[id] — full order detail page (items, status, payment, address)
+- [x] Account/Wishlist
+- [x] Account/Notifications — rich UI with notification cards (currently MOCK data)
+- [x] Account/Settings — UI shell with toggles (notifications, privacy)
 
-## What's NOT Working / Placeholder
+### Functionality
+- [x] Auth: login, register, guest checkout, JWT refresh rotation, forgot/reset password
+- [x] Cart events for cross-component sync (`voltex:cart-updated`)
+- [x] Razorpay payment flow with HMAC verification
+- [x] Coupon code validation at checkout
+- [x] Product reviews submission + display with rating breakdown
+- [x] Responsive design (mobile-first, navbar with mega-menu + mobile drawer)
+- [x] Image remote patterns for unsplash, placeholder.com, supabase
 
-- Notifications page — empty placeholder
-- Settings page — empty placeholder
-- Order detail page — only list view, no expanded detail
-- Dark/light mode toggle — next-themes installed, no UI control
-- Voice search — mic icon is UI-only
-- Coupon codes — "Apply Coupon" button is UI-only
-- Product reviews — display only, no submission form
-- Search suggestions — hardcoded mock (trending/recent)
-- Forgot password — no flow exists
-- Profile picture upload — not implemented
-- Several homepage sections use hardcoded mock data (deals, blogs, brands)
-- sitemap.xml / robots.txt — not generated
+## ⏳ What's Planned
+
+### 🔴 Critical
+- [ ] **Fix production deployment** — `NEXT_PUBLIC_API_URL` is set; needs CORS on server (`CLIENT_URL` env on Vercel server project) before client can reach API
+- [ ] **Replace mock notifications with real API** — server needs notifications endpoint first
+- [ ] **Wire Settings save handlers** — toggles currently don't persist anywhere
+
+### 🟠 Important UX
+- [ ] **Search autocomplete** — currently hardcoded mock (trending/recent) in `SearchSuggestions.tsx`
+- [ ] **Recently viewed products** carousel on home/category pages
+- [ ] **Order tracking timeline** UI on order detail (PENDING → CONFIRMED → SHIPPED → DELIVERED visual)
+- [ ] **Pincode / delivery availability** check on product page
+- [ ] **Dark/light mode toggle UI** — `next-themes` installed, just needs a switcher in navbar/settings
+- [ ] **Voice search** — mic icon is currently UI-only
+
+### 🟡 Nice to have
+- [ ] Product comparison (compare 2-4 products side by side)
+- [ ] Share product (Web Share API on mobile, copy link on desktop)
+- [ ] EMI calculator on product page
+- [ ] Social login (Google OAuth)
+- [ ] PWA support (manifest + service worker for offline shell)
+- [ ] sitemap.xml / robots.txt generation
+- [ ] Replace hardcoded mock data in home sections (DealsOfDay, UnboxedBlog, BrandsCarousel) with real CMS/API data
+- [ ] Loading skeletons (replace spinners on product/category pages)
+- [ ] Empty state illustrations (e.g., "No products match these filters")

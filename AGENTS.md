@@ -11,10 +11,10 @@ Do not hand-edit generated output in `server/dist/`.
 
 ## Build, Test, and Development Commands
 Run commands inside each package directory:
-- `npm run dev`: starts local dev server (`client` on :3000, `admin` on :5173, `server` on :8000).
+- `npm run dev`: starts local dev server (`client` on :3000, `admin` on :3002, `server` on :8000).
 - `npm run build`: production build (`next build`, `vite build`, or `tsc`).
 - `npm run lint`: ESLint checks for the package.
-- Server DB workflow: `npm run db:generate`, `npm run db:migrate`, `npm run db:seed`.
+- Server DB workflow: `npm run db:generate`, `npm run db:migrate`, `npm run db:seed`, `npm run db:studio`.
 
 Example:
 ```bash
@@ -30,7 +30,7 @@ cd server && npm run dev
 ## Testing Guidelines
 There is currently no committed automated unit/integration test suite. Minimum validation for every change:
 - run `npm run lint` in touched packages;
-- for API work, execute critical flows from `server/API_TESTING.md` (auth, category/product CRUD, cart/wishlist/order paths);
+- for API work, execute critical flows from `server/API_TESTING.md` (auth, forgot/reset password, category/product CRUD, cart/wishlist/coupons/orders/payments/reviews paths);
 - document manual test steps and results in the PR.
 
 ## Commit & Pull Request Guidelines
