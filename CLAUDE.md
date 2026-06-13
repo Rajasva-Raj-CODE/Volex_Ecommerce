@@ -197,7 +197,6 @@ Each package has `.env.example`. Key variables:
 ## ⏳ What's Planned (not built yet)
 
 ### 🔴 Critical (next sprint)
-- [ ] **Fix production deployment** — set `CLIENT_URL` + `ADMIN_URL` + `NODE_ENV=production` on Vercel server project (currently CORS-blocked)
 - [ ] **Razorpay webhook handler** — refunds, disputes, async payment state sync
 - [ ] **Client notifications API** — replace mock data with real notifications (order updates, price drops)
 - [ ] **Client settings save handlers** — wire toggles to backend preferences

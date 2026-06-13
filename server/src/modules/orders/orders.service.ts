@@ -3,6 +3,7 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../middleware/error.middleware";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "../../services/email.service";
 import { validateCoupon } from "../coupons/coupons.service";
+import { createNotification } from "../notifications/notifications.service";
 import type { PlaceOrderInput, UpdateOrderStatusInput, OrderQueryInput } from "./orders.schema";
 
 interface PaymentDetails {
@@ -142,6 +143,18 @@ export async function placeOrder(userId: string, input: PlaceOrderInput, payment
     console.error("Order confirmation email failed:", err);
   }
 
+  try {
+    await createNotification({
+      userId,
+      type: "ORDER_PLACED",
+      title: "Order placed",
+      body: `Your order #${order.id.slice(-8).toUpperCase()} has been placed. We'll keep you updated.`,
+      link: `/orders/${order.id}`,
+    });
+  } catch (err) {
+    console.error("Order placed notification failed:", err);
+  }
+
   return order;
 }
 
@@ -234,6 +247,28 @@ export async function updateOrderStatus(orderId: string, input: UpdateOrderStatu
     }
   } catch (err) {
     console.error("Order status update email failed:", err);
+  }
+
+  try {
+    const shortId = order.id.slice(-8).toUpperCase();
+    const statusCopy: Record<string, { type: "ORDER_CONFIRMED" | "ORDER_SHIPPED" | "ORDER_DELIVERED" | "ORDER_CANCELLED"; title: string; body: string }> = {
+      CONFIRMED: { type: "ORDER_CONFIRMED", title: "Order confirmed", body: `Order #${shortId} is confirmed and being prepared.` },
+      SHIPPED:   { type: "ORDER_SHIPPED",   title: "Order shipped",   body: `Order #${shortId} is on its way!` },
+      DELIVERED: { type: "ORDER_DELIVERED", title: "Order delivered", body: `Order #${shortId} has been delivered. Enjoy!` },
+      CANCELLED: { type: "ORDER_CANCELLED", title: "Order cancelled", body: `Order #${shortId} has been cancelled.` },
+    };
+    const copy = statusCopy[input.status];
+    if (copy) {
+      await createNotification({
+        userId: order.userId,
+        type: copy.type,
+        title: copy.title,
+        body: copy.body,
+        link: `/orders/${order.id}`,
+      });
+    }
+  } catch (err) {
+    console.error("Order status notification failed:", err);
   }
 
   return updated;
