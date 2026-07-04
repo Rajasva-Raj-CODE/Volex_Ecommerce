@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import Autoplay from "embla-carousel-autoplay"
 
 import {
@@ -21,48 +22,56 @@ const defaultBanners: HeroBanner[] = [
     imageSrc: "/assets/extracted/HP_Rotating_Samsung_S26Series_12March2026_KfOzAfswg.jpg",
     imageAlt: "Samsung Galaxy S26 Series",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_Samsung_S26Series_12March2026_cYFq1E0uh.jpg",
+    href: "/search?q=samsung",
   },
   {
     id: "ac",
     imageSrc: "/assets/extracted/HP_Rotating_AC_24March2026_smSkt9wOx.jpg",
     imageAlt: "Air Conditioner Sale",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_AC_24March2026_9ixJ1v0qF.jpg",
+    href: "/category/air-conditioners",
   },
   {
     id: "macbook",
     imageSrc: "/assets/extracted/HP_Rotating_Apple_MBneo_11March2026_XtdRqQHdE.jpg",
     imageAlt: "Apple MacBook",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_Apple_MBneo_11March2026_69tfaL9Ed.jpg",
+    href: "/search?q=macbook",
   },
   {
     id: "hp",
     imageSrc: "/assets/extracted/HP_Rotating_HP_24March2026_yhHAc57Bj.jpg",
     imageAlt: "HP Laptops",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_HP_24March2026_Aqcnrlil6.jpg",
+    href: "/search?q=hp+laptop",
   },
   {
     id: "redmi",
     imageSrc: "/assets/extracted/HP_Rotating_redmi_24March2026_t1upCRXpe.jpg",
     imageAlt: "Redmi Smartphones",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_redmi_24March2026_CmjijMTjU.jpg",
+    href: "/search?q=redmi",
   },
   {
     id: "ref",
     imageSrc: "/assets/extracted/HP_Rotating_ref_24March2026_nObrbK0du.jpg",
     imageAlt: "Refrigerators",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_ref_24March2026_yuBkpXA-5.jpg",
+    href: "/search?q=refrigerator",
   },
   {
     id: "sa",
     imageSrc: "/assets/extracted/HP_Rotating_SA_24March2026_XMxlZz5nB.jpg",
     imageAlt: "Small Appliances",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_SA_24March2026_zVCjI0uWV.jpg",
+    href: "/category/home-appliances",
   },
   {
     id: "tv",
     imageSrc: "/assets/extracted/HP_Rotating_TV_24March2026_KOcXJxvPV.jpg",
     imageAlt: "Smart TVs",
     mobileImageSrc: "/assets/extracted/MHP_Rotating_TV_24March2026_3-4fOV8hG.jpg",
+    href: "/category/tv-entertainment",
   },
 ]
 
@@ -103,7 +112,7 @@ function SegmentedProgressBar({ count }: { count: number }) {
 // ─── Single banner slide ─────────────────────────────────────────
 
 function BannerSlide({ banner }: { banner: HeroBanner }) {
-  return (
+  const content = (
     <div className="relative w-full bg-[#0f0f0f]">
       {/* Desktop image */}
       <div className="relative hidden sm:block w-full h-[87vh]">
@@ -129,6 +138,15 @@ function BannerSlide({ banner }: { banner: HeroBanner }) {
       </div>
     </div>
   )
+
+  if (banner.href) {
+    return (
+      <Link href={banner.href} aria-label={banner.imageAlt} className="block">
+        {content}
+      </Link>
+    )
+  }
+  return content
 }
 
 // ─── Main component ──────────────────────────────────────────────

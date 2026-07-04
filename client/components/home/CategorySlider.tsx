@@ -13,6 +13,30 @@ export type CategorySliderItem = {
   id: string
   label: string
   image?: string
+  href?: string
+}
+
+// Maps short default IDs to a real route. Category slugs match the server seed.
+// Fallback to /search?q=<label> for items without a dedicated category.
+const defaultCategoryHrefs: Record<string, string> = {
+  mobiles: "/category/mobiles-tablets-accessories",
+  tv: "/category/tv-entertainment",
+  laptops: "/category/laptops-accessories",
+  ac: "/category/air-conditioners",
+  coolers: "/category/home-appliances",
+  fans: "/category/home-appliances",
+  refrigerators: "/category/home-appliances",
+  headphones: "/category/headphones-speakers",
+  kitchen: "/category/kitchen-appliances",
+  grooming: "/category/personal-care",
+  cameras: "/category/cameras",
+  speakers: "/category/headphones-speakers",
+  tablets: "/category/mobiles-tablets-accessories",
+  washing: "/category/home-appliances",
+  accessories: "/category/mobiles-tablets-accessories",
+  wearables: "/category/mobiles-tablets-accessories",
+  microwaves: "/category/kitchen-appliances",
+  "home-theatres": "/category/headphones-speakers",
 }
 
 const defaultCategories: CategorySliderItem[] = [
@@ -34,7 +58,7 @@ const defaultCategories: CategorySliderItem[] = [
   { id: "wearables", label: "Wearables", image: "/assets/extracted/Wearables_iunu7h.png" },
   { id: "microwaves", label: "Microwaves", image: "/assets/extracted/Microwaves_otd6qq.png" },
   { id: "home-theatres", label: "Home Theatres", image: "/assets/extracted/Home_theatres_kpwvft.png" },
-]
+].map((c) => ({ ...c, href: defaultCategoryHrefs[c.id] ?? `/search?q=${encodeURIComponent(c.label)}` }))
 
 type CategorySliderProps = {
   items?: CategorySliderItem[]
@@ -123,6 +147,7 @@ export default function CategorySlider({
                 key={item.id}
                 label={item.label}
                 image={item.image}
+                href={item.href ?? `/category/${item.id}`}
               />
             ))}
           </div>

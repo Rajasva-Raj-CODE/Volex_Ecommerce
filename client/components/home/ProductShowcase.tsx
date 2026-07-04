@@ -1,69 +1,51 @@
-import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-
-export type ShowcaseBanner = {
-  id: string
-  imageSrc: string
-  imageAlt: string
-  href?: string
-}
-
-const defaultBanners: ShowcaseBanner[] = [
-  {
-    id: "nothing",
-    imageSrc: "/assets/extracted/HP_SOH_2Split_Nothing4a_13March2026_J-9KTC9JE.png",
-    imageAlt: "Nothing Phone 4a 5G",
-  },
-  {
-    id: "oneplus",
-    imageSrc: "/assets/extracted/HP_SOH_2Split_OnePlusBuds4Pro_23March2026_8CLUOfj33.png",
-    imageAlt: "OnePlus Nord Buds 4 Pro",
-  },
-  {
-    id: "pixel",
-    imageSrc: "/assets/extracted/HP_SOH_2Split_Pixel_9March2026_4bx8PoMrL.png",
-    imageAlt: "Google Pixel Smartphones",
-  },
-  {
-    id: "vivo",
-    imageSrc: "/assets/extracted/HP_SOH_2Split_VivoT5x_24March2026_QXPe0qEGQ.png",
-    imageAlt: "Vivo T5x 5G",
-  },
-]
+import { listProducts } from "@/lib/catalog-api"
+import HomeProductCard from "./HomeProductCard"
 
 type ProductShowcaseSectionProps = {
   title?: string
-  banners?: ShowcaseBanner[]
   className?: string
 }
 
-export default function ProductShowcaseSection({
+export default async function ProductShowcaseSection({
   title = "Watch Out For This",
-  banners = defaultBanners,
   className,
 }: ProductShowcaseSectionProps) {
+  let products: Awaited<ReturnType<typeof listProducts>>["products"] = []
+  try {
+    const result = await listProducts({
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      limit: 4,
+      isActive: true,
+    })
+    products = result.products
+  } catch {
+    // API unavailable — render nothing rather than fake data
+  }
+
+  if (products.length === 0) return null
+
   return (
     <section
       className={cn("w-full bg-[#0f0f0f] py-8", className)}
       aria-label={title}
     >
       <div className="mx-auto w-full max-w-7xl px-4">
-        <h2 className="mb-5 text-lg font-bold text-white">{title}</h2>
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <Link
+            href="/search?sort=newest"
+            className="text-xs font-semibold text-[#49A5A2] hover:underline"
+          >
+            View all
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {banners.map((banner) => (
-            <div
-              key={banner.id}
-              className="relative overflow-hidden rounded-xl aspect-[1124/481]"
-            >
-              <Image
-                src={banner.imageSrc}
-                alt={banner.imageAlt}
-                fill
-                sizes="(max-width: 640px) 100vw, 50vw"
-                className="object-cover"
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {products.map((p) => (
+            <HomeProductCard key={p.id} product={p} />
           ))}
         </div>
       </div>

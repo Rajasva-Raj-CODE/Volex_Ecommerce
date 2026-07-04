@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import useEmblaCarousel from "embla-carousel-react"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +23,7 @@ const defaultPosts: BlogPost[] = [
     title: "Google Pixel 10 Pro XL review",
     subtitle:
       "The big screen champion gets everything right... well almost",
+    href: "/search?q=google+pixel",
   },
   {
     id: "b2",
@@ -30,6 +32,7 @@ const defaultPosts: BlogPost[] = [
     title: "Best Laptops for Every Budget",
     subtitle:
       "From everyday browsing to high-performance gaming — find your match.",
+    href: "/category/laptops-accessories",
   },
   {
     id: "b3",
@@ -38,6 +41,7 @@ const defaultPosts: BlogPost[] = [
     title: "Smart Home Essentials Guide",
     subtitle:
       "Transform your living space with must-have smart devices and appliances.",
+    href: "/category/home-appliances",
   },
   {
     id: "b4",
@@ -46,6 +50,7 @@ const defaultPosts: BlogPost[] = [
     title: "Summer Cooling Solutions",
     subtitle:
       "Beat the heat with our top picks for ACs, coolers, and fans.",
+    href: "/category/air-conditioners",
   },
 ]
 
@@ -128,12 +133,14 @@ export default function PromoBannerPair({
                             {post.subtitle}
                           </p>
                         )}
-                        <button
-                          type="button"
-                          className="mt-4 rounded-lg bg-[#49A5A2] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d8d8a] sm:mt-5 sm:px-8 sm:py-3 sm:text-base"
-                        >
-                          Read Now
-                        </button>
+                        {post.href ? (
+                          <Link
+                            href={post.href}
+                            className="mt-4 inline-block rounded-lg bg-[#49A5A2] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d8d8a] sm:mt-5 sm:px-8 sm:py-3 sm:text-base"
+                          >
+                            Shop Now
+                          </Link>
+                        ) : null}
                       </div>
                     </div>
                   </div>

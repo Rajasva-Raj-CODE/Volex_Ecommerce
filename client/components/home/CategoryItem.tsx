@@ -1,22 +1,17 @@
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export type CategoryItemProps = {
   label: string
   image?: string
+  href?: string
   className?: string
 }
 
-export function CategoryItem({ label, image, className }: CategoryItemProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "flex w-20 shrink-0 flex-col items-center gap-2 sm:w-24",
-        "group cursor-pointer",
-        className
-      )}
-    >
+export function CategoryItem({ label, image, href, className }: CategoryItemProps) {
+  const inner = (
+    <>
       <div
         className={cn(
           "flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl",
@@ -42,6 +37,26 @@ export function CategoryItem({ label, image, className }: CategoryItemProps) {
       <p className="w-full text-center text-[0.65rem] font-medium leading-tight text-white/80 sm:text-[0.7rem]">
         {label}
       </p>
+    </>
+  )
+
+  const baseClasses = cn(
+    "flex w-20 shrink-0 flex-col items-center gap-2 sm:w-24",
+    "group cursor-pointer",
+    className
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className={baseClasses} aria-label={label}>
+        {inner}
+      </Link>
+    )
+  }
+
+  return (
+    <button type="button" className={baseClasses}>
+      {inner}
     </button>
   )
 }

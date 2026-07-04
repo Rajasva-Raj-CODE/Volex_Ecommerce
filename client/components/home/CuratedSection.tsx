@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export type CuratedCard = {
@@ -26,17 +27,20 @@ const defaultTabs: CuratedTab[] = [
       {
         id: "c1",
         imageSrc: "/assets/extracted/Croma_Collections_aer8cq.png",
-        imageAlt: "Croma Collections",
+        imageAlt: "VolteX Collections",
+        href: "/search?q=premium",
       },
       {
         id: "c2",
         imageSrc: "/assets/extracted/Indulge_rve6v9.png",
         imageAlt: "Indulge",
+        href: "/search?q=luxury",
       },
       {
         id: "c3",
         imageSrc: "/assets/extracted/1Gift_dflts4.png",
         imageAlt: "Gift Store",
+        href: "/search?q=gift",
       },
     ],
   },
@@ -48,6 +52,7 @@ const defaultTabs: CuratedTab[] = [
         id: "dw1",
         imageSrc: "/assets/extracted/Deals_of_the_week_-_Desktop_cdvjjx.png",
         imageAlt: "Deals of the Week",
+        href: "/search?q=deal",
       },
     ],
   },
@@ -58,22 +63,26 @@ const defaultTabs: CuratedTab[] = [
       {
         id: "b1",
         imageSrc: "/assets/extracted/HP_Blog_1_17Sept2025_ANAI_bY8UC.png",
-        imageAlt: "Blog 1",
+        imageAlt: "Pixel 10 Pro XL Review",
+        href: "/search?q=google+pixel",
       },
       {
         id: "b2",
         imageSrc: "/assets/extracted/HP_Blog_2_17Sept2025_vFQ1Vcmux8.png",
-        imageAlt: "Blog 2",
+        imageAlt: "Best Laptops Guide",
+        href: "/category/laptops-accessories",
       },
       {
         id: "b3",
         imageSrc: "/assets/extracted/HP_Blog_3_17Sept2025_zbJUe4oSeU.png",
-        imageAlt: "Blog 3",
+        imageAlt: "Smart Home Essentials",
+        href: "/category/home-appliances",
       },
       {
         id: "b4",
         imageSrc: "/assets/extracted/HP_Blog_4_17Sept2025_uMyVgCeJ5w.png",
-        imageAlt: "Blog 4",
+        imageAlt: "Summer Cooling Solutions",
+        href: "/category/air-conditioners",
       },
     ],
   },
@@ -85,6 +94,7 @@ const defaultTabs: CuratedTab[] = [
         id: "s1",
         imageSrc: "/assets/extracted/HP_Sustainability_Regular_27Oct2025_kgAHAmU3z.png",
         imageAlt: "Sustainability",
+        href: "/search?q=eco",
       },
     ],
   },
@@ -160,20 +170,26 @@ export default function CuratedSection({
 
         {/* Cards - 2-column grid */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {activeItems.map((item) => (
-            <div
-              key={item.id}
-              className="relative overflow-hidden rounded-xl aspect-[2163/1050]"
-            >
-              <Image
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover"
-              />
-            </div>
-          ))}
+          {activeItems.map((item) => {
+            const tile = (
+              <div className="relative overflow-hidden rounded-xl aspect-[2163/1050] transition-transform duration-200 hover:scale-[1.01]">
+                <Image
+                  src={item.imageSrc}
+                  alt={item.imageAlt}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
+              </div>
+            )
+            return item.href ? (
+              <Link key={item.id} href={item.href} aria-label={item.imageAlt}>
+                {tile}
+              </Link>
+            ) : (
+              <div key={item.id}>{tile}</div>
+            )
+          })}
         </div>
 
         {activeItems.length === 0 && (

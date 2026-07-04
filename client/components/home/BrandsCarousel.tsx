@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useHorizontalCarousel } from "@/hooks/use-horizontal-carousel"
 
@@ -27,7 +28,7 @@ const defaultBrands: BrandCard[] = [
   { id: "12", imageSrc: "/assets/extracted/12_hfsle3.png", imageAlt: "Panasonic" },
   { id: "13", imageSrc: "/assets/extracted/13_fbzbpw.png", imageAlt: "Philips" },
   { id: "14", imageSrc: "/assets/extracted/14_xtc6jg.png", imageAlt: "Voltas" },
-]
+].map((b) => ({ ...b, href: `/search?q=${encodeURIComponent(b.imageAlt)}` }))
 
 type BrandsSectionProps = {
   brands?: BrandCard[]
@@ -78,22 +79,30 @@ export default function BrandsSection({
             ref={scrollerRef}
             className="scrollbar-none flex min-w-0 flex-1 gap-3 overflow-x-auto"
           >
-            {brands.map((brand) => (
-              <div
-                key={brand.id}
-                className="relative shrink-0 overflow-hidden rounded-lg bg-[#2a2a2a] aspect-[4/3] w-[calc((100%-3rem)/5)]
-                  max-[900px]:w-[calc((100%-2.25rem)/4)]
-                  max-[640px]:w-[calc((100%-1.5rem)/3)]"
-              >
-                <Image
-                  src={brand.imageSrc}
-                  alt={brand.imageAlt}
-                  fill
-                  sizes="(max-width: 640px) 33vw, (max-width: 900px) 25vw, 20vw"
-                  className="object-cover"
-                />
-              </div>
-            ))}
+            {brands.map((brand) => {
+              const tile = (
+                <div
+                  className="relative shrink-0 overflow-hidden rounded-lg bg-[#2a2a2a] aspect-[4/3] w-[calc((100%-3rem)/5)] transition-transform duration-200 hover:scale-[1.03]
+                    max-[900px]:w-[calc((100%-2.25rem)/4)]
+                    max-[640px]:w-[calc((100%-1.5rem)/3)]"
+                >
+                  <Image
+                    src={brand.imageSrc}
+                    alt={brand.imageAlt}
+                    fill
+                    sizes="(max-width: 640px) 33vw, (max-width: 900px) 25vw, 20vw"
+                    className="object-cover"
+                  />
+                </div>
+              )
+              return brand.href ? (
+                <Link key={brand.id} href={brand.href} aria-label={brand.imageAlt} className="contents">
+                  {tile}
+                </Link>
+              ) : (
+                <React.Fragment key={brand.id}>{tile}</React.Fragment>
+              )
+            })}
           </div>
 
           {/* Right chevron */}

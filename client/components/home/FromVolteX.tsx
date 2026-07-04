@@ -1,64 +1,51 @@
-import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-
-export type FromVolteXCard = {
-  id: string
-  imageSrc: string
-  imageAlt: string
-  href?: string
-}
-
-const defaultItems: FromVolteXCard[] = [
-  {
-    id: "acs",
-    imageSrc: "/assets/extracted/HP_CC_3Split_ACs_01March2026_f34B2BN6n.png",
-    imageAlt: "Air Conditioners",
-  },
-  {
-    id: "cooler",
-    imageSrc: "/assets/extracted/HP_CC_3Split_cooler_17March26_T9o9k4tnF.png",
-    imageAlt: "Coolers",
-  },
-  {
-    id: "tv",
-    imageSrc: "/assets/extracted/HP_CC_3Split_TV_28Jan26_PGRpzp01L.png",
-    imageAlt: "Smart TVs",
-  },
-]
+import { listProducts } from "@/lib/catalog-api"
+import HomeProductCard from "./HomeProductCard"
 
 type FromVolteXSectionProps = {
   title?: string
-  items?: FromVolteXCard[]
   className?: string
 }
 
-export default function FromVolteXSection({
+// VolteX-brand products from the store
+export default async function FromVolteXSection({
   title = "From VolteX to You",
-  items = defaultItems,
   className,
 }: FromVolteXSectionProps) {
+  let products: Awaited<ReturnType<typeof listProducts>>["products"] = []
+  try {
+    const result = await listProducts({
+      brand: "VolteX",
+      limit: 4,
+      isActive: true,
+    })
+    products = result.products
+  } catch {
+    // ignore
+  }
+
+  if (products.length === 0) return null
+
   return (
     <section
       className={cn("w-full bg-[#0f0f0f] py-8", className)}
       aria-label={title}
     >
       <div className="mx-auto w-full max-w-7xl px-4">
-        <h2 className="mb-5 text-lg font-bold text-white">{title}</h2>
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <Link
+            href="/search?q=voltex"
+            className="text-xs font-semibold text-[#49A5A2] hover:underline"
+          >
+            View all
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="relative overflow-hidden rounded-xl aspect-[720/452]"
-            >
-              <Image
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                fill
-                sizes="(max-width: 640px) 100vw, 33vw"
-                className="object-cover"
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {products.map((p) => (
+            <HomeProductCard key={p.id} product={p} />
           ))}
         </div>
       </div>

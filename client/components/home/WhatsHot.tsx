@@ -1,69 +1,52 @@
-import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-
-export type WhatsHotCard = {
-  id: string
-  imageSrc: string
-  imageAlt: string
-  href?: string
-}
-
-const defaultItems: WhatsHotCard[] = [
-  {
-    id: "oneplus",
-    imageSrc: "/assets/extracted/HP_What_sHot_oneplus_25March2026_eb58iFDm-g.jpg",
-    imageAlt: "OnePlus",
-  },
-  {
-    id: "ac",
-    imageSrc: "/assets/extracted/HP_What_sHot_AC_25March2026_cj3MNfmQv.jpg",
-    imageAlt: "2026 AC Series",
-  },
-  {
-    id: "tv",
-    imageSrc: "/assets/extracted/HP_What_sHot_TV_25March2026_Kwjc7hHKI0.jpg",
-    imageAlt: "Smart TVs",
-  },
-  {
-    id: "ipad",
-    imageSrc: "/assets/extracted/HP_What_sHot_ipad_25March2026_8rtlzkTZ3I.jpg",
-    imageAlt: "iPad",
-  },
-]
+import { listProducts } from "@/lib/catalog-api"
+import HomeProductCard from "./HomeProductCard"
 
 type WhatsHotSectionProps = {
   title?: string
-  items?: WhatsHotCard[]
   className?: string
 }
 
-export default function WhatsHotSection({
+// "What's Hot" — premium picks (highest price)
+export default async function WhatsHotSection({
   title = "What's Hot",
-  items = defaultItems,
   className,
 }: WhatsHotSectionProps) {
+  let products: Awaited<ReturnType<typeof listProducts>>["products"] = []
+  try {
+    const result = await listProducts({
+      sortBy: "price",
+      sortOrder: "desc",
+      limit: 4,
+      isActive: true,
+    })
+    products = result.products
+  } catch {
+    // ignore
+  }
+
+  if (products.length === 0) return null
+
   return (
     <section
       className={cn("w-full bg-[#0f0f0f] py-8", className)}
       aria-label={title}
     >
       <div className="mx-auto w-full max-w-7xl px-4">
-        <h2 className="mb-5 text-lg font-bold text-white">{title}</h2>
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <Link
+            href="/search?sort=price-desc"
+            className="text-xs font-semibold text-[#49A5A2] hover:underline"
+          >
+            View all
+          </Link>
+        </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="relative overflow-hidden rounded-xl aspect-[1124/1473]"
-            >
-              <Image
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                fill
-                sizes="(max-width: 640px) 50vw, 25vw"
-                className="object-cover"
-              />
-            </div>
+          {products.map((p) => (
+            <HomeProductCard key={p.id} product={p} imageAspect="tall" />
           ))}
         </div>
       </div>

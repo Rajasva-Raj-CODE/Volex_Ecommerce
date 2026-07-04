@@ -1,69 +1,69 @@
-import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-
-export type DealCard = {
-  id: string
-  imageSrc: string
-  imageAlt: string
-  href?: string
-}
-
-const defaultItems: DealCard[] = [
-  {
-    id: "cooktops",
-    imageSrc: "/assets/extracted/HP_DOTD_cooktops_24March26_1YfiRx5OS.jpg",
-    imageAlt: "Gas Stoves & Induction Cooktops",
-  },
-  {
-    id: "tws",
-    imageSrc: "/assets/extracted/HP_DOTD_TWS_24March26_Ec6i4jL5G.jpg",
-    imageAlt: "Truly Wireless Earbuds",
-  },
-  {
-    id: "powerbanks",
-    imageSrc: "/assets/extracted/HP_DOTD_PB_24March26_g96_NmQj-U.jpg",
-    imageAlt: "Power Banks",
-  },
-  {
-    id: "smartwatches",
-    imageSrc: "/assets/extracted/HP_DOTD_SW_24March26_gEwQSTlwm.jpg",
-    imageAlt: "Bluetooth Calling Smartwatches",
-  },
-]
+import { listProducts, type ApiProduct } from "@/lib/catalog-api"
+import HomeProductCard from "./HomeProductCard"
 
 type GreaterSavingsDealsSectionProps = {
   title?: string
-  items?: DealCard[]
   className?: string
 }
 
-export default function GreaterSavingsDealsSection({
+function asNumber(v: string | number | null | undefined) {
+  if (v == null) return undefined
+  const n = typeof v === "string" ? parseFloat(v) : v
+  return Number.isFinite(n) ? n : undefined
+}
+
+function discountPct(p: ApiProduct) {
+  const price = asNumber(p.price) ?? 0
+  const mrp = asNumber(p.mrp)
+  if (!mrp || mrp <= price) return 0
+  return ((mrp - price) / mrp) * 100
+}
+
+// "Deals Of The Day" — top 4 by discount percentage.
+// Sorted client-side after fetching, since the server doesn't sort by discount.
+export default async function GreaterSavingsDealsSection({
   title = "Deals Of The Day",
-  items = defaultItems,
   className,
 }: GreaterSavingsDealsSectionProps) {
+  let products: ApiProduct[] = []
+  try {
+    const result = await listProducts({
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      limit: 30,
+      isActive: true,
+    })
+    products = [...result.products]
+      .sort((a, b) => discountPct(b) - discountPct(a))
+      .filter((p) => discountPct(p) > 0)
+      .slice(0, 4)
+  } catch {
+    // ignore
+  }
+
+  if (products.length === 0) return null
+
   return (
     <section
       className={cn("w-full bg-[#0f0f0f] py-8", className)}
       aria-label={title}
     >
       <div className="mx-auto w-full max-w-7xl px-4">
-        <h2 className="mb-5 text-lg font-bold text-white">{title}</h2>
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <Link
+            href="/search"
+            className="text-xs font-semibold text-[#49A5A2] hover:underline"
+          >
+            View all
+          </Link>
+        </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="relative overflow-hidden rounded-xl aspect-[1124/1479]"
-            >
-              <Image
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                fill
-                sizes="(max-width: 640px) 50vw, 25vw"
-                className="object-cover"
-              />
-            </div>
+          {products.map((p) => (
+            <HomeProductCard key={p.id} product={p} imageAspect="tall" />
           ))}
         </div>
       </div>
