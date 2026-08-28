@@ -141,7 +141,7 @@ export default function LoginClient() {
                     <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Email</label>
                     <div className="relative">
                       <HugeiconsIcon icon={Mail01Icon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                      <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required placeholder="you@example.com" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                      <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required autoComplete="username" placeholder="you@example.com" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
                     </div>
                   </div>
                   <button type="submit" disabled={resetLoading} className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_6px_24px_rgba(73,165,162,0.35)] disabled:opacity-50 cursor-pointer">
@@ -167,20 +167,20 @@ export default function LoginClient() {
                   )}
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Reset Code</label>
-                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} required placeholder="6-digit code" maxLength={6} className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[20px] font-mono text-center tracking-[0.3em] placeholder:text-white/25 placeholder:text-[14px] placeholder:tracking-normal px-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} required autoComplete="one-time-code" placeholder="6-digit code" maxLength={6} className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[20px] font-mono text-center tracking-[0.3em] placeholder:text-white/25 placeholder:text-[14px] placeholder:tracking-normal px-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">New Password</label>
                     <div className="relative">
                       <HugeiconsIcon icon={LockPasswordIcon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Min. 8 characters" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Min. 8 characters" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Confirm Password</label>
                     <div className="relative">
                       <HugeiconsIcon icon={LockPasswordIcon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Confirm new password" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
+                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Confirm new password" className="w-full h-[50px] rounded-xl border border-white/[0.1] bg-white/[0.04] text-white text-[14px] placeholder:text-white/25 pl-9 pr-4 outline-none focus:border-[#49A5A2]/60 focus:ring-1 focus:ring-[#49A5A2]/20 transition-all" />
                     </div>
                   </div>
                   <button type="submit" disabled={resetLoading || otp.length !== 6} className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#49A5A2] to-[#3d8d8a] text-white text-[15px] font-bold hover:from-[#5ab5b2] hover:to-[#49A5A2] transition-all duration-200 shadow-[0_6px_24px_rgba(73,165,162,0.35)] disabled:opacity-50 cursor-pointer">

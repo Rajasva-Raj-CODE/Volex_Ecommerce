@@ -123,11 +123,22 @@ export async function customerLogin(input: CustomerLoginInput) {
 export async function forgotPassword(input: ForgotPasswordInput) {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
-    select: { id: true, passwordHash: true },
+    select: { id: true, isActive: true, passwordHash: true },
   });
 
-  // Silent success to prevent email enumeration
-  if (!user || !user.passwordHash) return;
+  // Silent success to prevent email enumeration — an unknown or disabled
+  // account is indistinguishable from a successful request to the caller.
+  if (!user || !user.isActive) return;
+
+  // STAFF accounts have no password by design — they sign in with an emailed
+  // code. A reset code would be a dead end, so say so instead of going quiet.
+  if (!user.passwordHash) {
+    throw new AppError(
+      "This account signs in with an emailed code, not a password. Use the Staff tab to sign in.",
+      400,
+      "PASSWORDLESS_ACCOUNT"
+    );
+  }
 
   // Invalidate existing unused reset OTPs
   await prisma.otpSession.deleteMany({
@@ -149,9 +160,16 @@ export async function forgotPassword(input: ForgotPasswordInput) {
   try {
     await sendPasswordResetEmail({ toEmail: input.email, otp });
   } catch (err) {
+    // Never report success here — the caller would wait on an OTP screen for
+    // mail that isn't coming. The OTP row is left to expire on its own in case
+    // the send partially succeeded. Resend's message can name internal config,
+    // so it stays in the logs and the caller gets a generic failure.
     console.error("Password reset email failed:", err);
-    // Don't throw — OTP is created, but email didn't send.
-    // On Resend free plan this will fail for non-owner emails.
+    throw new AppError(
+      "Could not send the reset code. Please try again shortly.",
+      502,
+      "EMAIL_SEND_FAILED"
+    );
   }
 }
 

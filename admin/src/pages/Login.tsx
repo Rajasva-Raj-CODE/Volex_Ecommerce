@@ -285,7 +285,7 @@ export default function Login() {
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Email</label>
                 <div className="relative">
                   <HugeiconsIcon icon={Mail01Icon} size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
-                  <Input type="email" value={resetEmail} required onChange={e => setResetEmail(e.target.value)} placeholder="admin@voltex.com"
+                  <Input type="email" value={resetEmail} required autoComplete="username" onChange={e => setResetEmail(e.target.value)} placeholder="admin@voltex.com"
                     className="h-11 rounded-xl border-white/8 bg-white/4 pl-9 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
                 </div>
               </div>
@@ -307,18 +307,18 @@ export default function Login() {
               )}
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Reset Code</label>
-                <Input type="text" inputMode="numeric" maxLength={6} value={resetOtp} required
+                <Input type="text" inputMode="numeric" maxLength={6} value={resetOtp} required autoComplete="one-time-code"
                   onChange={e => setResetOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000"
                   className="h-11 rounded-xl border-white/8 bg-white/4 text-center text-xl tracking-[0.5em] font-bold text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
               </div>
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">New Password</label>
-                <Input type="password" value={newPassword} required minLength={8} onChange={e => setNewPassword(e.target.value)} placeholder="Min. 8 characters"
+                <Input type="password" value={newPassword} required minLength={8} autoComplete="new-password" onChange={e => setNewPassword(e.target.value)} placeholder="Min. 8 characters"
                   className="h-11 rounded-xl border-white/8 bg-white/4 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
               </div>
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-white/30">Confirm Password</label>
-                <Input type="password" value={confirmPw} required minLength={8} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
+                <Input type="password" value={confirmPw} required minLength={8} autoComplete="new-password" onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
                   className="h-11 rounded-xl border-white/8 bg-white/4 text-sm text-white placeholder:text-white/20 focus-visible:border-primary/50 focus-visible:ring-0" />
               </div>
               <Button type="submit" disabled={resetLoading || resetOtp.length < 6} className="h-11 w-full rounded-xl font-semibold bg-primary text-primary-foreground">
