@@ -328,7 +328,7 @@ Customer navigates to /checkout
 1. Frontend: POST /api/payments/razorpay/order
    { addressId, items, couponCode }
 
-2. Server:
+2. Server
    - Validates all items have sufficient stock
    - Calculates final amount (subtotal - couponDiscount) in paise
    - Calls Razorpay API to create a Razorpay order

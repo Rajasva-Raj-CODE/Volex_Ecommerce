@@ -2,6 +2,8 @@
 
 # VolteX E-Commerce — Client (Storefront)
 
+> **Design system:** [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) is the source of truth for all storefront UI — tokens, page shells, typography, component recipes, and the checklist for adding a feature. Read it before building or modifying any customer-facing UI.
+
 ## Overview
 
 Customer-facing storefront for an electronics e-commerce platform. Built with Next.js 16 App Router. Most pages are API-integrated — auth, cart, checkout, orders, wishlist, addresses all work with the real backend. Some homepage sections still use hardcoded data.
