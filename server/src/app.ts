@@ -37,7 +37,15 @@ app.use(
 );
 
 // ─── Request parsing ─────────────────────────────────────────────────────────
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+    // Keep the untouched bytes around for HMAC signature checks (Razorpay webhook).
+    verify: (req, _res, buf) => {
+      (req as express.Request).rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Logging ─────────────────────────────────────────────────────────────────

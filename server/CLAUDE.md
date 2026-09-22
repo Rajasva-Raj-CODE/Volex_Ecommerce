@@ -6,7 +6,7 @@
 
 Express.js REST API serving both the customer storefront and admin dashboard. All core e-commerce APIs are implemented — auth, products, categories, cart, wishlist, orders, payments, uploads, and dashboard analytics.
 
-**Status (May 2026):** Production-deployed on Vercel. All 14 feature modules implemented including reviews, coupons, forgot-password, order emails, and profile update. Missing: Razorpay webhooks, search autocomplete, audit logs, automated tests.
+**Status (May 2026):** Production-deployed on Vercel. All 14 feature modules implemented including reviews, coupons, forgot-password, order emails, and profile update. Missing: search autocomplete, audit logs, automated tests.
 
 ## Tech Stack
 
@@ -63,7 +63,7 @@ server/
 │   │   ├── wishlist/               # Add, remove, list
 │   │   ├── addresses/              # CRUD with default flag
 │   │   ├── orders/                 # Place (atomic stock tx), list, status updates, fire confirmation/status emails
-│   │   ├── payments/               # Razorpay order creation + signature verification
+│   │   ├── payments/               # Razorpay order creation, signature verification, webhook
 │   │   ├── uploads/                # Image upload to Supabase (base64)
 │   │   ├── users/                  # List customers (admin), update profile, change password
 │   │   ├── dashboard/              # Summary analytics
@@ -76,8 +76,8 @@ server/
 │       ├── otp.ts                  # generateOtp, hashOtp, verifyOtp, otpExpiresAt
 │       └── response.ts            # success() and error() response helpers
 ├── prisma/
-│   ├── schema.prisma               # Full database schema (13 models, 5 enums)
-│   ├── migrations/                 # 5 migrations (init, customer role, order payment, product detail, phase1)
+│   ├── schema.prisma               # Full database schema (14 models, 6 enums)
+│   ├── migrations/                 # 7 migrations (init, customer role, order payment, product detail, phase1, notifications, payment intents)
 │   └── seed.ts                     # Seeds admin user
 ├── dist/                           # Compiled output (DO NOT EDIT)
 ├── .env / .env.example
@@ -182,6 +182,7 @@ modules/{feature}/
 |--------|------|-------------|
 | POST | /razorpay/order | Create Razorpay payment order |
 | POST | /razorpay/verify | Verify HMAC signature → place order with PAID status |
+| POST | /razorpay/webhook | **Public** — Razorpay HMAC-signed callback: payment.captured / payment.failed / refund.processed |
 
 ### Uploads (`/api/uploads`) — Admin/Staff only
 | Method | Path | Description |
@@ -223,7 +224,7 @@ modules/{feature}/
 |--------|------|-------------|
 | GET | /health | API health check |
 
-## Database Schema (13 models)
+## Database Schema (14 models)
 
 ```
 User ──┬── CartItem
@@ -238,10 +239,11 @@ Category ──── Product (categoryId FK)
 Category ──── Category (parentId self-ref, 3-level hierarchical)
 
 Coupon (standalone, applied via couponCode on Order)
+PaymentIntent ── User, Order (holds cart payload between Razorpay order creation and capture)
 OtpSession (standalone, linked by email — STAFF_LOGIN or RESET_PASSWORD)
 ```
 
-**Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN/RESET_PASSWORD), `DiscountType` (PERCENTAGE/FIXED), `OrderStatus` (PENDING/CONFIRMED/SHIPPED/DELIVERED/CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED)
+**Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN/RESET_PASSWORD), `DiscountType` (PERCENTAGE/FIXED), `OrderStatus` (PENDING/CONFIRMED/SHIPPED/DELIVERED/CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED), `PaymentIntentStatus` (CREATED/PROCESSING/COMPLETED/FAILED)
 
 ## Authentication Architecture
 
@@ -321,6 +323,7 @@ SUPABASE_STORAGE_BUCKET=product-images
 # Razorpay
 RAZORPAY_KEY_ID=
 RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=          # optional; webhook replies 503 until set
 ```
 
 ## Key Implementation Details
@@ -341,12 +344,27 @@ RAZORPAY_KEY_SECRET=
 
 ### Razorpay Payment Flow
 1. Client calls `/payments/razorpay/order` with cart details
-2. Server creates Razorpay order (amount in paise, INR)
+2. Server creates Razorpay order (amount in paise, INR) **and writes a `PaymentIntent`
+   holding the cart payload** — this is what lets the webhook finish the job when the
+   browser never comes back
 3. Client opens Razorpay Checkout modal
 4. User completes payment
 5. Client calls `/payments/razorpay/verify` with razorpayOrderId, paymentId, signature
 6. Server verifies HMAC-SHA256 signature
 7. If valid, places order with PAID status (unique constraint on paymentId prevents reuse)
+
+### Payment Completion Is Idempotent
+`/verify` (browser) and `/webhook` (Razorpay) both call the same
+`completePaymentIntent`, and Razorpay retries deliveries, so the path is guarded
+three ways:
+1. An order already carrying that `razorpayPaymentId` → return it, do nothing.
+2. A conditional `updateMany` claims the intent (`CREATED`/`FAILED` → `PROCESSING`).
+   Only the winner places the order; the loser gets 409.
+3. Failure releases the claim (status `FAILED` + `lastError`) so a retry can work.
+
+If the payment is captured but the order still can't be built (stock gone, coupon
+expired), the intent stays `FAILED`, the customer gets a SYSTEM notification, and
+the webhook acks 200 — **this needs a manual refund**, not another delivery.
 
 ## ✅ What's Built
 
@@ -357,7 +375,7 @@ RAZORPAY_KEY_SECRET=
 - [x] Categories — tree/flat/admin, CRUD with cascade protection
 - [x] Cart, Wishlist, Addresses — full CRUD per user
 - [x] Orders — atomic stock transaction, customer + admin views, status transitions
-- [x] Payments — Razorpay order + HMAC verification
+- [x] Payments — Razorpay order + HMAC verification + **webhook (captured/failed/refunded) via `PaymentIntent`**
 - [x] Uploads — Supabase Storage with MIME/size validation
 - [x] Users — list customers (admin), **update profile**, **change password**
 - [x] Dashboard — admin + staff summary
@@ -375,15 +393,15 @@ RAZORPAY_KEY_SECRET=
 - [x] Helmet, CORS, rate limiting (general/auth/OTP)
 - [x] Zod validation on all inputs
 - [x] Global error handler (AppError, ZodError, 500 fallback)
-- [x] 5 Prisma migrations
+- [x] 7 Prisma migrations
 - [x] Vercel serverless deployment (`vercel.json`)
 - [x] CI/CD (GitHub Actions lint + build)
 
 ## ⏳ What's Planned
 
 ### 🔴 Critical
-- [ ] **Razorpay webhook handler** — refunds, disputes, async payment state sync
-- [ ] **Notifications API** — backend to power client notifications page (currently mocked)
+- [ ] Razorpay disputes (`payment.dispute.*`) — webhook plumbing exists, events not handled yet
+- [ ] Admin surface for stuck payments (`PaymentIntent` rows left FAILED after capture — currently only visible in the DB)
 
 ### 🟠 Important
 - [ ] Search suggestions/autocomplete endpoint

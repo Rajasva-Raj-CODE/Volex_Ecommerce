@@ -7,6 +7,12 @@ import type { RequestHandler } from "express";
 
 const router = Router();
 
+// ─── Public: Razorpay webhook ─────────────────────────────────────────────────
+// Mounted before `requireAuth` — Razorpay has no JWT. Authenticity comes from the
+// HMAC signature over the raw body instead.
+router.post("/razorpay/webhook", controller.razorpayWebhook as RequestHandler);
+
+// ─── Everything below requires a signed-in customer ──────────────────────────
 router.use(requireAuth as RequestHandler);
 
 router.post(

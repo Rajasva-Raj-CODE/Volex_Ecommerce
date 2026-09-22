@@ -40,6 +40,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PaymentIntentStatus {
+  CREATED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum NotificationType {
   ORDER_PLACED
   ORDER_CONFIRMED
@@ -56,7 +63,7 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String?
-  passwordHash String?  // Only ADMIN has this. STAFF logs in via OTP.
+  passwordHash String? // Only ADMIN has this. STAFF logs in via OTP.
   phone        String?
   avatar       String?
   role         Role     @default(STAFF)
@@ -64,7 +71,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  invitationsSent Invitation[]   @relation("InvitedBy")
+  invitationsSent Invitation[]    @relation("InvitedBy")
   refreshTokens   RefreshToken[]
   orders          Order[]
   cartItems       CartItem[]
@@ -72,6 +79,7 @@ model User {
   addresses       Address[]
   reviews         Review[]
   notifications   Notification[]
+  paymentIntents  PaymentIntent[]
 
   @@index([email])
 }
@@ -81,12 +89,12 @@ model User {
 model Invitation {
   id          String   @id @default(cuid())
   email       String
-  used        Boolean  @default(false)  // true once the staff member logs in
+  used        Boolean  @default(false) // true once the staff member logs in
   invitedById String
   invitedBy   User     @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 
-  @@unique([email])                     // one active invitation per email
+  @@unique([email]) // one active invitation per email
   @@index([email])
 }
 
@@ -95,9 +103,9 @@ model Invitation {
 model OtpSession {
   id        String     @id @default(cuid())
   email     String
-  otpHash   String     // bcrypt hash of the 6-digit OTP
+  otpHash   String // bcrypt hash of the 6-digit OTP
   purpose   OtpPurpose
-  expiresAt DateTime   // 15 minutes from creation
+  expiresAt DateTime // 15 minutes from creation
   used      Boolean    @default(false)
   createdAt DateTime   @default(now())
 
@@ -108,7 +116,7 @@ model OtpSession {
 
 model RefreshToken {
   id        String   @id @default(cuid())
-  tokenHash String   @unique  // bcrypt hash of the actual token
+  tokenHash String   @unique // bcrypt hash of the actual token
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
@@ -208,7 +216,7 @@ model WishlistItem {
 
 model Address {
   id        String  @id @default(cuid())
-  label     String  // e.g. "Home", "Work"
+  label     String // e.g. "Home", "Work"
   line1     String
   line2     String?
   city      String
@@ -225,28 +233,54 @@ model Address {
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 model Order {
-  id                String        @id @default(cuid())
-  status            OrderStatus   @default(PENDING)
-  paymentStatus     PaymentStatus @default(PENDING)
-  paymentMethod     String        @default("COD")
+  id                String         @id @default(cuid())
+  status            OrderStatus    @default(PENDING)
+  paymentStatus     PaymentStatus  @default(PENDING)
+  paymentMethod     String         @default("COD")
   razorpayOrderId   String?
-  razorpayPaymentId String?       @unique
+  razorpayPaymentId String?        @unique
   razorpaySignature String?
-  totalAmount       Decimal       @db.Decimal(10, 2)
+  totalAmount       Decimal        @db.Decimal(10, 2)
   couponCode        String?
-  discountAmount    Decimal?      @db.Decimal(10, 2)
+  discountAmount    Decimal?       @db.Decimal(10, 2)
   userId            String
   addressId         String?
-  user              User          @relation(fields: [userId], references: [id])
-  address           Address?      @relation(fields: [addressId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+  address           Address?       @relation(fields: [addressId], references: [id])
   items             OrderItem[]
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  paymentIntent     PaymentIntent?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   @@index([userId])
   @@index([status])
   @@index([paymentStatus])
   @@index([razorpayOrderId])
+}
+
+/// A Razorpay checkout attempt. Created the moment we ask Razorpay for an order
+/// id, so the cart payload survives the browser. Both the client verify call and
+/// the Razorpay webhook complete the intent, whichever arrives first.
+model PaymentIntent {
+  id                String              @id @default(cuid())
+  razorpayOrderId   String              @unique
+  razorpayPaymentId String?
+  status            PaymentIntentStatus @default(CREATED)
+  amount            Decimal             @db.Decimal(10, 2)
+  currency          String              @default("INR")
+  addressId         String
+  items             Json
+  couponCode        String?
+  lastError         String?
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  orderId           String?             @unique
+  order             Order?              @relation(fields: [orderId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 model OrderItem {
@@ -284,7 +318,7 @@ model Coupon {
 
 model Review {
   id         String   @id @default(cuid())
-  rating     Int      // 1-5 stars
+  rating     Int // 1-5 stars
   title      String?
   comment    String
   isApproved Boolean  @default(false)

@@ -729,7 +729,46 @@ curl -s -X POST http://localhost:8000/api/payments/razorpay/verify \
     "couponCode": "WELCOME10"
   }' | python3 -m json.tool
 ```
-**What happens:** HMAC-SHA256 signature verified → order created with `PaymentStatus = PAID`. Unique constraint on `paymentId` prevents reuse.
+**What happens:** HMAC-SHA256 signature verified → the `PaymentIntent` recorded in 12.1 is claimed and turned into an order with `PaymentStatus = PAID`. Unique constraint on `paymentId` prevents reuse.
+
+> The `addressId` / `items` / `couponCode` in the body are only a fallback for
+> checkouts started before the `PaymentIntent` table existed. When an intent
+> exists, the server uses *its* stored payload — the client cannot swap in a
+> different cart after paying.
+
+### 12.3 Razorpay Webhook (no auth — HMAC signed)
+
+Razorpay calls this; there is no bearer token. Authenticity comes from
+`x-razorpay-signature`, an HMAC-SHA256 of the **raw** request body keyed with
+`RAZORPAY_WEBHOOK_SECRET`.
+
+```bash
+SECRET="$RAZORPAY_WEBHOOK_SECRET"
+BODY='{"event":"payment.captured","payload":{"payment":{"entity":{"id":"pay_XXX","order_id":"order_XXX"}}}}'
+SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex | sed 's/.*= //')
+
+curl -s -X POST http://localhost:8000/api/payments/razorpay/webhook \
+  -H "Content-Type: application/json" \
+  -H "x-razorpay-signature: $SIG" \
+  -d "$BODY" | python3 -m json.tool
+```
+
+Handled events:
+
+| Event | Effect |
+|-------|--------|
+| `payment.captured` / `order.paid` | Completes the `PaymentIntent` → creates the order as PAID. Idempotent. |
+| `payment.failed` | Marks the intent FAILED; syncs any existing order to `PaymentStatus = FAILED`. |
+| `refund.processed` / `refund.created` | Sets the order to `PaymentStatus = REFUNDED` + notifies the customer. |
+| anything else | Acked with `handled: false`. |
+
+**Status codes:** only a bad/missing signature (400) or an unset
+`RAZORPAY_WEBHOOK_SECRET` (503) returns non-2xx. Everything else acks 200 so
+Razorpay stops redelivering — the JSON `note` says what actually happened.
+
+**Race with 12.2:** the browser and the webhook can arrive at once. Whichever
+claims the intent first (`CREATED`/`FAILED` → `PROCESSING`) places the order; the
+loser gets 409 and backs off. Only one order is ever created.
 
 ---
 
@@ -867,6 +906,7 @@ curl -s -X POST http://localhost:8000/api/products \
 | DELETE | /api/reviews/:id | ✓ | ADMIN |
 | POST | /api/payments/razorpay/order | ✓ | any |
 | POST | /api/payments/razorpay/verify | ✓ | any |
+| POST | /api/payments/razorpay/webhook | — | Razorpay HMAC |
 | POST | /api/uploads/image | ✓ | ADMIN/STAFF |
 | GET | /api/dashboard/summary | ✓ | ADMIN/STAFF |
 

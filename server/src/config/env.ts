@@ -31,6 +31,9 @@ const envSchema = z.object({
 
   RAZORPAY_KEY_ID: z.string().min(1, "RAZORPAY_KEY_ID is required"),
   RAZORPAY_KEY_SECRET: z.string().min(1, "RAZORPAY_KEY_SECRET is required"),
+  // Optional so existing deployments keep booting. While unset the webhook
+  // endpoint replies 503 and Razorpay retries until the secret is configured.
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -6,7 +6,7 @@
 
 Full-stack electronics e-commerce platform (inspired by Croma / Reliance Digital). TypeScript monorepo with four packages — customer storefront, admin dashboard, REST API server, and mobile app (planned).
 
-**Current State (May 2026):** Server APIs 100% complete (14 modules, 13 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile not started.
+**Current State (May 2026):** Server APIs 100% complete (14 modules, 14 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile not started.
 
 ## Monorepo Structure
 
@@ -84,7 +84,7 @@ npm run lint                      # ESLint (run per package)
    └─────────────┘ └────────┘ └────────────┘
 ```
 
-## Database Models (Prisma) — 13 models
+## Database Models (Prisma) — 14 models
 
 | Model | Purpose |
 |-------|---------|
@@ -100,6 +100,7 @@ npm run lint                      # ESLint (run per package)
 | Order | With status flow, payment tracking, Razorpay fields, couponCode + discountAmount |
 | OrderItem | Line items with price-at-purchase snapshot |
 | Coupon | Promo codes (PERCENTAGE or FIXED discount, min order, max uses, expiry) |
+| PaymentIntent | Razorpay checkout attempt — holds the cart payload so the webhook can place the order without the browser |
 | Review | Product reviews + ratings (1-5 stars, status moderation, user + product FKs) |
 
 **Enums:** `Role` (ADMIN/STAFF/CUSTOMER), `OtpPurpose` (STAFF_LOGIN/RESET_PASSWORD), `DiscountType` (PERCENTAGE/FIXED), `OrderStatus` (PENDING→CONFIRMED→SHIPPED→DELIVERED, CANCELLED), `PaymentStatus` (PENDING/PAID/FAILED/REFUNDED)
@@ -118,7 +119,7 @@ npm run lint                      # ESLint (run per package)
 | Wishlist | get, add, remove | Customer |
 | Addresses | list, create, update, delete | Customer |
 | Orders | place (with stock tx + email), my orders, get, list all, update status (with email) | Customer/Admin+Staff |
-| Payments | create Razorpay order, verify signature | Customer |
+| Payments | create Razorpay order, verify signature, **Razorpay webhook** | Customer/Public (HMAC) |
 | Uploads | image upload to Supabase | Admin+Staff |
 | Users | list customers, update profile, change password | Auth/Admin+Staff |
 | Dashboard | summary analytics | Admin+Staff |
@@ -137,7 +138,7 @@ npm run lint                      # ESLint (run per package)
 ## Environment Variables
 
 Each package has `.env.example`. Key variables:
-- **Server:** `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `RESEND_API_KEY`, `SUPABASE_*`, `RAZORPAY_*`, `CLIENT_URL`, `ADMIN_URL`
+- **Server:** `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `RESEND_API_KEY`, `SUPABASE_*`, `RAZORPAY_*` (incl. optional `RAZORPAY_WEBHOOK_SECRET`), `CLIENT_URL`, `ADMIN_URL`
 - **Client:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`
 - **Admin:** `VITE_API_URL`, `VITE_SUPABASE_*`
 
@@ -152,7 +153,7 @@ Each package has `.env.example`. Key variables:
 - [x] Wishlist — list/add/remove
 - [x] Addresses — CRUD with default flag
 - [x] Orders — atomic stock tx (no overselling), customer + admin views, status transitions, **confirmation + status update emails**
-- [x] Payments — Razorpay order creation + HMAC signature verification
+- [x] Payments — Razorpay order creation + HMAC signature verification + **webhook (captured/failed/refunded)**
 - [x] Uploads — Supabase Storage (JPEG/PNG/WebP/GIF, 5MB cap)
 - [x] Users — list customers, **update profile (name/phone/avatar), change password**
 - [x] Dashboard — admin + staff summary analytics
@@ -192,13 +193,11 @@ Each package has `.env.example`. Key variables:
 ### Infrastructure
 - [x] Vercel deployments for server, client, admin
 - [x] CI/CD (GitHub Actions — lint + build on PRs)
-- [x] 5 Prisma migrations (init, customer role, order payment fields, product detail fields, phase1 features)
+- [x] 7 Prisma migrations (init, customer role, order payment fields, product detail fields, phase1 features, notifications, payment intents)
 
 ## ⏳ What's Planned (not built yet)
 
 ### 🔴 Critical (next sprint)
-- [ ] **Razorpay webhook handler** — refunds, disputes, async payment state sync
-- [ ] **Client notifications API** — replace mock data with real notifications (order updates, price drops)
 - [ ] **Client settings save handlers** — wire toggles to backend preferences
 - [ ] **Admin Settings store info handlers** — wire remaining sections to API
 
