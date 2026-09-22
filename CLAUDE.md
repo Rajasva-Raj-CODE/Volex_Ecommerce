@@ -6,7 +6,7 @@
 
 Full-stack electronics e-commerce platform (inspired by Croma / Reliance Digital). TypeScript monorepo with four packages — customer storefront, admin dashboard, REST API server, and mobile app (planned).
 
-**Current State (May 2026):** Server APIs 100% complete (14 modules, 14 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile not started.
+**Current State (September 2026):** Server APIs complete (15 modules, 14 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile has a browse-only milestone running in Expo Go.
 
 ## Monorepo Structure
 
@@ -15,7 +15,7 @@ Volex_Ecommerce/
 ├── client/       # Customer storefront — Next.js 16 (App Router, React 19)    → :3000
 ├── admin/        # Admin dashboard    — Vite 8 + React 19 + React Router 7    → :3002
 ├── server/       # REST API           — Express 4 + Prisma + PostgreSQL       → :8000
-├── mobile/       # Mobile app         — React Native + Expo (scaffolded only)
+├── mobile/       # Mobile app         — Expo SDK 57 + React Native 0.86        → Expo Go
 ├── postman/      # Postman collections for API testing
 ├── .github/      # CI/CD (GitHub Actions — lint + build on PRs)
 ├── AGENTS.md     # Development guidelines & coding conventions
@@ -29,6 +29,7 @@ Each package is independent — separate `package.json`, separate build, separat
 | Layer | Technology |
 |-------|-----------|
 | Client | Next.js 16.2, React 19, Tailwind CSS 4, shadcn/ui, Embla Carousel |
+| Mobile | Expo SDK 57, React Native 0.86, React 19, Expo Router (native tabs + stacks), SF Symbols, NativeWind 4 |
 | Admin | Vite 8, React 19, React Router 7, Tailwind CSS 4, shadcn/ui, TanStack Table, Recharts |
 | Server | Express 4.21, Prisma 5.22, PostgreSQL, JWT, bcrypt, Zod, Resend |
 | Storage | Supabase Storage (product/category images) |
@@ -49,6 +50,11 @@ cd server && npm run db:studio    # Open Prisma Studio GUI
 # Client
 cd client && npm run dev          # Next.js dev server
 cd client && npm run build        # Production build
+
+# Mobile
+cd mobile && npx expo start       # Expo dev server (scan QR with Expo Go)
+cd mobile && npm run lint         # expo lint
+cd mobile && npm run typecheck    # tsc --noEmit
 
 # Admin
 cd admin && npm run dev           # Vite dev server
@@ -141,6 +147,7 @@ Each package has `.env.example`. Key variables:
 - **Server:** `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `RESEND_API_KEY`, `SUPABASE_*`, `RAZORPAY_*` (incl. optional `RAZORPAY_WEBHOOK_SECRET`), `CLIENT_URL`, `ADMIN_URL`
 - **Client:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`
 - **Admin:** `VITE_API_URL`, `VITE_SUPABASE_*`
+- **Mobile:** `EXPO_PUBLIC_API_URL` (inlined into the bundle — never put secrets in `EXPO_PUBLIC_*`)
 
 ## ✅ What's Built (production-ready)
 
@@ -230,8 +237,20 @@ Each package has `.env.example`. Key variables:
 - [ ] CDN/caching strategy
 - [ ] Docker / docker-compose for local dev
 
-### 📱 Mobile (not started)
-- [ ] React Native + Expo app — currently only scaffolded with placeholder `index.ts`
+### 📱 Mobile (browse-only milestone shipped)
+- [x] Expo SDK 57 + Expo Router + NativeWind scaffold
+- [x] **Mobile design system** (`mobile/DESIGN_SYSTEM.md`) — quick-commerce (Blinkit-style) layout on native interaction: light canvas, dense category grid, compact cards with inline ADD, sticky buy bar, SF Symbols / Material Symbols, haptics. Separate from the web system; only the brand teal is shared
+- [x] **Motion layer** (Reanimated 4) — spring press feedback, collapsing/parallax header with pinned search, staggered entrances, animated gallery dots, shimmer skeletons. All Reduce Motion aware
+- [x] Native navigation — `NativeTabs` (real UITabBarController / Material bottom nav), per-tab stacks, iOS search controller
+- [x] API layer ported from `client/lib/` (same envelope + `ApiError`, plus timeouts/abort)
+- [x] Home (category rail + product rails), search (debounced), category listing, product detail (gallery, specs, variants, bank offers, reviews)
+- [ ] Auth — customer login/register + secure token storage
+- [ ] Cart + wishlist
+- [ ] Checkout + Razorpay — **needs a dev build**, native module won't run in Expo Go
+- [ ] Orders, addresses, account
+- [ ] Pagination / infinite scroll (search and category are capped at 20/40)
+- [ ] App icon + splash (still Expo template defaults)
+- [ ] Dark mode + Dynamic Type (mobile tokens are light-only, fixed point sizes)
 
 ## Git Workflow
 

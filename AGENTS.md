@@ -5,7 +5,7 @@ This repo is a TypeScript monorepo with four top-level packages:
 - `client/`: customer storefront (Next.js App Router). Main code in `app/`, reusable UI in `components/`, shared helpers in `lib/`.
 - `admin/`: admin dashboard (Vite + React). Route pages in `src/pages/`, shared UI in `src/components/`, utilities/API clients in `src/lib/`.
 - `server/`: Express + Prisma API. Entry points in `src/index.ts` and `src/app.ts`, feature modules in `src/modules/*`, DB schema/migrations in `prisma/`.
-- `mobile/`: scaffolded placeholder (`index.ts`) for future React Native work.
+- `mobile/`: Expo (SDK 57) storefront for iOS/Android. Routes in `src/app/` (Expo Router — every file is a screen), shared UI in `src/components/`, API clients in `src/lib/`. Styling via NativeWind.
 
 Do not hand-edit generated output in `server/dist/`.
 
