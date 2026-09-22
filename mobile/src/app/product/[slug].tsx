@@ -10,12 +10,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AddToCartControl } from "../../components/AddToCartControl";
 import { PressableScale } from "../../components/PressableScale";
 import { ErrorState, LoadingState } from "../../components/States";
+import { WishlistButton } from "../../components/WishlistButton";
 import { Icon } from "../../design/Icon";
 import { selectionFeedback } from "../../design/haptics";
 import { STAGGER_STEP, duration, timing } from "../../design/motion";
-import { color, radius, shadow, space, type } from "../../design/tokens";
+import { color, radius, shadow, shadowRaised, space, type } from "../../design/tokens";
 import { useAsync } from "../../hooks/useAsync";
 import { getProduct, listProductReviews } from "../../lib/catalog-api";
 import { discountPercent, formatPrice, ratingValue } from "../../lib/format";
@@ -50,7 +52,14 @@ function Card({
         ...shadow,
       }}
     >
-      {title ? <Text style={{ ...type.section, color: color.label }}>{title}</Text> : null}
+      {title ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+          <View
+            style={{ width: 3, height: 15, borderRadius: radius.pill, backgroundColor: color.brand }}
+          />
+          <Text style={{ ...type.section, color: color.label }}>{title}</Text>
+        </View>
+      ) : null}
       {children}
     </Animated.View>
   );
@@ -80,8 +89,8 @@ function SpecRow({ label, value, last }: { label: string; value: string; last: b
         borderBottomColor: color.separator,
       }}
     >
-      <Text style={{ ...type.meta, color: color.secondaryLabel, width: "40%" }}>{label}</Text>
-      <Text style={{ ...type.meta, color: color.label, flex: 1 }}>{value}</Text>
+      <Text style={{ ...type.meta, color: color.tertiaryLabel, width: "40%" }}>{label}</Text>
+      <Text style={{ ...type.meta, fontWeight: "500", color: color.label, flex: 1 }}>{value}</Text>
     </View>
   );
 }
@@ -122,6 +131,24 @@ export default function ProductScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ backgroundColor: color.card }}>
+          {images.length > 1 ? (
+            <View
+              style={{
+                position: "absolute",
+                top: space.lg,
+                right: space.xl,
+                zIndex: 1,
+                backgroundColor: "rgba(28,28,30,0.55)",
+                paddingHorizontal: space.md,
+                paddingVertical: 3,
+                borderRadius: radius.pill,
+              }}
+            >
+              <Text style={{ ...type.micro, color: "#FFFFFF" }}>
+                {activeImage + 1}/{images.length}
+              </Text>
+            </View>
+          ) : null}
           <FlatList
             horizontal
             pagingEnabled
@@ -137,8 +164,8 @@ export default function ProductScreen() {
                   <Image
                     source={item}
                     contentFit="contain"
-                    transition={200}
-                    style={{ width: "100%", height: "100%" }}
+                    transition={220}
+                    style={{ width: "84%", height: "84%" }}
                   />
                 ) : (
                   <Icon name="photo" size={30} color={color.tertiaryLabel} />
@@ -194,7 +221,9 @@ export default function ProductScreen() {
             ) : null}
 
             <View style={{ gap: space.md }} className="flex-row items-baseline">
-              <Text style={{ ...type.hero, color: color.label }}>{formatPrice(p.price)}</Text>
+              <Text style={{ ...type.hero, fontSize: 28, lineHeight: 34, color: color.label }}>
+                {formatPrice(p.price)}
+              </Text>
               {off ? (
                 <Text
                   style={{
@@ -412,6 +441,7 @@ export default function ProductScreen() {
           backgroundColor: color.card,
           borderTopWidth: 1,
           borderTopColor: color.separator,
+          ...shadowRaised,
         }}
       >
         <View style={{ flex: 1 }}>
@@ -423,25 +453,11 @@ export default function ProductScreen() {
           ) : null}
         </View>
 
-        <PressableScale
-          disabled
-          activeScale={0.97}
-          style={{
-            flex: 1.6,
-            height: 46,
-            borderRadius: radius.md,
-            backgroundColor: color.well,
-            flexDirection: "row",
-            gap: space.md,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="cart" size={15} color={color.tertiaryLabel} />
-          <Text style={{ ...type.action, color: color.tertiaryLabel }}>
-            {soldOut ? "Out of stock" : "Add to cart"}
-          </Text>
-        </PressableScale>
+        <WishlistButton productId={p.id} />
+
+        <View style={{ flex: 1.6 }}>
+          <AddToCartControl productId={p.id} stock={p.stock} variant="bar" />
+        </View>
       </Animated.View>
     </View>
   );

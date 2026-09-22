@@ -19,6 +19,8 @@ export const color = {
   /** Brand teal — header, accents, ADD action, active states. */
   brand: "#49A5A2",
   brandDark: "#3D8E8B",
+  /** Deep end of the brand gradient. Flat fills read as unfinished at scale. */
+  brandDeep: "#2E7F7D",
   /** Very light teal wash for selected chips and badges. */
   brandWash: "#E9F4F4",
   onBrand: "#FFFFFF",
@@ -82,12 +84,31 @@ export const radius = {
 /** Soft card lift. Android needs elevation, iOS needs the shadow quad. */
 export const shadow = Platform.select({
   ios: {
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    // Tinted toward the brand rather than pure black — a neutral shadow on a
+    // warm-neutral canvas reads as grey dirt around the card edge.
+    shadowColor: "#0B2B2A",
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
   },
   default: { elevation: 2 },
+})!;
+
+/**
+ * Brand gradient. A single flat teal across a large surface looks unfinished on
+ * a phone; a shallow two-stop ramp gives it depth without becoming decorative.
+ */
+export const brandGradient = ["#4FB0AC", "#49A5A2", "#3D8E8B"] as const;
+
+/** A card lift one step above `shadow`, for surfaces that float over content. */
+export const shadowRaised = Platform.select({
+  ios: {
+    shadowColor: "#0B2B2A",
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  default: { elevation: 6 },
 })!;
 
 /** Native minimum touch target: 44pt on iOS, 48dp on Android. */

@@ -9,9 +9,10 @@ Customer storefront for iOS and Android. Expo SDK 57 + React Native 0.86 + React
 Expo Router for navigation, NativeWind for styling. Talks to the same Express API as
 the web client and admin dashboard.
 
-**Status (September 2026):** Browse-only milestone. Quick-commerce (Blinkit-style)
-visual language on native platform navigation. Home, search, category listing and
-product detail are wired to real APIs. No auth, no cart, no checkout yet.
+**Status (September 2026):** Browse + auth + cart, behind a splash and welcome
+gate. Quick-commerce (Blinkit-style) visual language on native platform
+navigation. Home, search, category, product detail, customer auth, cart and
+wishlist are wired to real APIs. No checkout yet.
 
 ## Commands
 
@@ -33,41 +34,111 @@ moment Razorpay goes in (`react-native-razorpay` has native code).
 mobile/
 ├── src/
 │   ├── app/                        # Expo Router — every file here is a route
-│   │   ├── _layout.tsx             # root Stack (detail screens push over tabs)
+│   │   ├── _layout.tsx             # providers, splash hold, auth gate
+│   │   ├── welcome.tsx             # first-launch gate (sign in / browse)
+│   │   ├── sign-in.tsx             # modal — sign in / create account
 │   │   ├── (tabs)/
-│   │   │   ├── _layout.tsx         # NativeTabs — real UITabBarController
+│   │   │   ├── _layout.tsx         # NativeTabs + cart badge
 │   │   │   ├── (home)/             # each tab is a group with its own Stack
-│   │   │   │   ├── _layout.tsx     # headerShown: false — StoreHeader is the header
-│   │   │   │   └── index.tsx       # promise header, category grid, rails
-│   │   │   └── (search)/
-│   │   │       ├── _layout.tsx
-│   │   │       └── index.tsx       # native search controller, 2-col grid
-│   │   ├── product/[slug].tsx      # gallery, specs, variants, offers, reviews
-│   │   └── category/[slug].tsx     # products in a category + its children
+│   │   │   ├── (search)/           # platform search controller
+│   │   │   ├── (cart)/             # cart lines + subtotal bar
+│   │   │   └── (account)/          # profile, sign out, wishlist
+│   │   ├── product/[slug].tsx
+│   │   └── category/[slug].tsx
+│   ├── context/
+│   │   ├── OnboardingProvider.tsx  # guest-browsing flag
+│   │   ├── AuthProvider.tsx        # session restore, sign in/up/out
+│   │   ├── CartProvider.tsx        # reducer + optimistic writes
+│   │   └── WishlistProvider.tsx
 │   ├── design/                     # the design system — see DESIGN_SYSTEM.md
 │   │   ├── tokens.ts               # color/type/space/radius/shadow
 │   │   ├── motion.ts               # durations, easing, springs, stagger
 │   │   ├── Icon.tsx                # SF Symbols (iOS) / Material (Android)
 │   │   └── haptics.ts
 │   ├── components/
+│   │   ├── AnimatedSplash.tsx      # native-splash → app handoff
 │   │   ├── StoreHeader.tsx         # teal promise header + pinned compact bar
+│   │   ├── ProductCard.tsx         # ribbon, image well, price/ADD row
+│   │   ├── AddToCartControl.tsx    # ADD ⇄ − qty + stepper
+│   │   ├── WishlistButton.tsx
 │   │   ├── PressableScale.tsx      # spring press feedback
 │   │   ├── Skeleton.tsx            # shimmer loading placeholders
-│   │   ├── ProductCard.tsx         # ribbon, image well, price/ADD row
 │   │   └── States.tsx              # Loading / Error / Empty
 │   ├── hooks/useAsync.ts           # fetch + abort + loading/error state
 │   └── lib/
-│       ├── api.ts                  # mirrors client/lib/api.ts
-│       ├── catalog-api.ts          # products, categories, reviews
+│       ├── session.ts              # SecureStore tokens + single-flight refresh
+│       ├── preferences.ts          # durable non-credential flags
+│       ├── api.ts                  # envelope, ApiError, bearer + 401 retry
+│       ├── auth-api.ts
+│       ├── catalog-api.ts
+│       ├── cart-api.ts
+│       ├── wishlist-api.ts
 │       └── format.ts               # ₹ formatting, discount %, rating
 ├── DESIGN_SYSTEM.md                # read before touching any screen
-├── global.css                      # NativeWind entry (Tailwind directives)
-├── tailwind.config.js              # mirrors src/design/tokens.ts
-├── babel.config.js                 # babel-preset-expo + nativewind/babel
-└── metro.config.js                 # withNativeWind
+├── global.css / tailwind.config.js / babel.config.js / metro.config.js
 ```
 
 Keep non-route code out of `src/app/` — Expo Router treats every file there as a screen.
+
+## Launch & the auth gate
+
+`SplashScreen.preventAutoHideAsync()` runs at module scope, and the native splash
+is held until **both** the stored session and the guest-browsing flag have been
+read. That way the first frame is the correct one — never a welcome screen that
+disappears a beat later.
+
+Once booted, [AnimatedSplash](src/components/AnimatedSplash.tsx) is drawn over the
+mounted app matching the native splash exactly (same teal, same mark), then
+animates away. Without it, hiding the native splash reads as a flicker.
+
+Routing uses `Stack.Protected`:
+
+```
+gateOpen = signedIn || guestAccepted
+  true  → (tabs), product/, category/
+  false → welcome
+```
+
+`sign-in` sits outside both guards, because it's reachable from the welcome gate
+*and* from the in-app cart prompt.
+
+**Browsing is deliberately not gated.** A hard auth wall on a storefront stops
+people seeing what's for sale; the cart is what requires an account. "Continue
+browsing" sets a durable flag via [preferences.ts](src/lib/preferences.ts), so the
+gate appears once. To make it a hard gate instead, drop `guestAccepted` from
+`gateOpen` and remove that button.
+
+## Auth & session
+
+Tokens live in the OS keystore via `expo-secure-store` — a refresh token is a
+7-day credential, so AsyncStorage would be wrong.
+
+[session.ts](src/lib/session.ts) owns the pair and the refresh handshake;
+[api.ts](src/lib/api.ts) attaches the bearer for `{ auth: true }` calls and
+transparently retries once after a 401.
+
+**The refresh must stay single-flight.** The server invalidates the old refresh
+token on use (verified: replaying it returns "Refresh token not found or
+expired"), so two parallel refreshes would race and the loser's token would
+already be dead. `refreshSession()` returns the in-flight promise when one exists.
+
+`session.ts` deliberately does **not** use `apiRequest` — that module calls back
+into it, and routing the refresh through it would be infinitely recursive.
+
+## State providers
+
+`AuthProvider` → `CartProvider` → `WishlistProvider`, in that order (both cart
+and wishlist read the session).
+
+Cart and wishlist state is **tagged with the user id it belongs to** and derived
+at read time (`isCurrent = signedIn && state.forUserId === userId`). That means
+signing out empties them without a `setState` inside an effect, and a new sign-in
+can never briefly show the previous customer's items. The React Compiler lint
+rejects synchronous `setState` in an effect body, so this isn't optional styling.
+
+Cart writes are optimistic: the stepper moves on the same frame as the tap and
+rolls back if the request fails. The optimistic action carries a **function**, not
+a value, so two taps in one frame can't both compute from the same stale base.
 
 ## API integration
 
@@ -122,12 +193,10 @@ carrying a design value goes through `tokens.ts`.
 
 ## ⏳ Not built yet
 
+- **Checkout + Razorpay** — needs a dev build, the SDK has native code
+- Orders list/detail, addresses, profile editing
+- Forgot-password flow (the API wrapper exists, no screen yet)
+- Pagination / infinite scroll on search and category (capped at 20/40)
 - Dark mode — tokens are light-only (see DESIGN_SYSTEM.md §6)
 - Dynamic Type / font scaling — sizes are fixed points
-- Auth (customer login/register, JWT + refresh, secure token storage)
-- Cart and wishlist
-- Checkout + Razorpay (needs a dev build — native module)
-- Orders, addresses, account
-- Pagination / infinite scroll on search and category (currently capped at 20/40)
-- App icon and splash — still the Expo template defaults
 - Offline handling beyond the request timeout

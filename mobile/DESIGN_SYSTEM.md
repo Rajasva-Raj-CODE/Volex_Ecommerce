@@ -52,6 +52,7 @@ dependent values (`shadow`, `HIT_SLOP_MIN`) exist only in `tokens.ts`, because
 |---|---|---|
 | `brand` | `#49A5A2` | Header block, ADD outline, links, active tab |
 | `brandDark` | `#3D8E8B` | Pressed state of a filled brand surface |
+| `brandDeep` | `#2E7F7D` | Deep stop of `brandGradient` |
 | `brandWash` | `#E9F4F4` | Category tiles, selected chips, pressed ADD |
 | `onBrand` | `#FFFFFF` | Text/icons on a filled brand surface |
 | `canvas` | `#F6F7F8` | Screen background behind cards |
@@ -94,6 +95,16 @@ Radius: `sm 6 · md 10 · lg 14 · xl 18 · pill`. Cards are `lg`, controls `md`
 the header's bottom corners `xl`.
 
 `shadow` is a soft lift — the shadow quad on iOS, `elevation` on Android.
+`shadowRaised` is one step above it, for surfaces that float *over* content: the
+sticky buy bar, the pinned search field, the primary auth button.
+
+Both tint toward `#0B2B2A` rather than pure black. A neutral shadow on a
+warm-neutral canvas reads as grey dirt around the card edge.
+
+`brandGradient` is a shallow three-stop teal ramp. **Every large brand surface
+uses it, never a flat fill** — a single flat teal across a phone-sized area looks
+unfinished. Applied on the home header, the pinned compact bar, the welcome
+screen and the animated splash, always `{x:0,y:0} → {x:1,y:1}`.
 
 ---
 
@@ -107,8 +118,23 @@ the work.
 
 ### Product card — [ProductCard.tsx](src/components/ProductCard.tsx)
 The signature element. Top to bottom: discount ribbon over a square image well,
-delivery hint, 2-line name, brand + rating, then the price/ADD row.
+delivery hint, 2-line name, brand + rating pill, then the price/ADD row.
 `SOLD` replaces `ADD` when stock is 0, and the button is disabled.
+
+Three details that carry it, and that a rewrite must keep:
+
+- **The text block is a fixed 74pt.** Product names run one or two lines; without
+  a fixed height the price/ADD rows sit at different heights across a grid row,
+  which is the single biggest thing that makes a card grid look unfinished.
+- **The image well is a white→`well` gradient, and the image is inset to 86%.**
+  Catalogue shots are cut-outs on white; a flat grey square makes them look
+  pasted on, and a full-bleed image touches the corners.
+- **The ribbon is an inset pill, not a flush corner tag** — it reads as placed
+  rather than as a rendering artefact.
+
+### Section headers
+A 3pt brand accent bar to the left of the title, on home *and* inside detail
+cards. It gives the eye an anchor scrolling a long page.
 
 ### Cards on detail — `Card` in [product/[slug].tsx](src/app/product/[slug].tsx)
 White rounded block on the canvas. Every section of the detail page is one.

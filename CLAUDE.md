@@ -6,7 +6,7 @@
 
 Full-stack electronics e-commerce platform (inspired by Croma / Reliance Digital). TypeScript monorepo with four packages — customer storefront, admin dashboard, REST API server, and mobile app (planned).
 
-**Current State (September 2026):** Server APIs complete (15 modules, 14 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile has a browse-only milestone running in Expo Go.
+**Current State (September 2026):** Server APIs complete (15 modules, 14 Prisma models). Client storefront fully wired with real APIs across all customer flows. Admin dashboard fully wired across all 11 pages. Live deployments on Vercel. Mobile covers browse + auth + cart + wishlist, running in Expo Go.
 
 ## Monorepo Structure
 
@@ -237,19 +237,21 @@ Each package has `.env.example`. Key variables:
 - [ ] CDN/caching strategy
 - [ ] Docker / docker-compose for local dev
 
-### 📱 Mobile (browse-only milestone shipped)
+### 📱 Mobile (browse + auth + cart shipped)
 - [x] Expo SDK 57 + Expo Router + NativeWind scaffold
 - [x] **Mobile design system** (`mobile/DESIGN_SYSTEM.md`) — quick-commerce (Blinkit-style) layout on native interaction: light canvas, dense category grid, compact cards with inline ADD, sticky buy bar, SF Symbols / Material Symbols, haptics. Separate from the web system; only the brand teal is shared
 - [x] **Motion layer** (Reanimated 4) — spring press feedback, collapsing/parallax header with pinned search, staggered entrances, animated gallery dots, shimmer skeletons. All Reduce Motion aware
 - [x] Native navigation — `NativeTabs` (real UITabBarController / Material bottom nav), per-tab stacks, iOS search controller
 - [x] API layer ported from `client/lib/` (same envelope + `ApiError`, plus timeouts/abort)
 - [x] Home (category rail + product rails), search (debounced), category listing, product detail (gallery, specs, variants, bank offers, reviews)
-- [ ] Auth — customer login/register + secure token storage
-- [ ] Cart + wishlist
+- [x] **Customer auth** — register/login, tokens in the OS keystore (`expo-secure-store`), single-flight refresh rotation with transparent 401 retry
+- [x] **Cart** — ADD ⇄ stepper on cards and detail, optimistic writes with rollback, native tab badge, cart tab with subtotal
+- [x] **Wishlist** — heart toggle, wishlist screen under Account
 - [ ] Checkout + Razorpay — **needs a dev build**, native module won't run in Expo Go
 - [ ] Orders, addresses, account
 - [ ] Pagination / infinite scroll (search and category are capped at 20/40)
-- [ ] App icon + splash (still Expo template defaults)
+- [x] **Splash + welcome gate** — branded native splash, animated handoff, first-launch welcome screen with sign-in or guest browsing (`Stack.Protected`)
+- [x] Generated VolteX app icon / splash / adaptive icon assets
 - [ ] Dark mode + Dynamic Type (mobile tokens are light-only, fixed point sizes)
 
 ## Git Workflow

@@ -1,16 +1,11 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-} from "react-native-reanimated";
 import { Icon } from "../design/Icon";
-import { selectionFeedback, tapFeedback } from "../design/haptics";
-import { springPop } from "../design/motion";
+import { tapFeedback } from "../design/haptics";
 import { color, radius, shadow, space, type } from "../design/tokens";
+import { AddToCartControl } from "./AddToCartControl";
 import { PressableScale } from "./PressableScale";
 import type { ApiProduct } from "../lib/catalog-api";
 import { discountPercent, formatPrice, ratingValue } from "../lib/format";
@@ -31,17 +26,11 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
   const off = discountPercent(product.price, product.mrp);
   const rating = ratingValue(product.rating);
   const image = product.images?.[0];
-  const soldOut = product.stock <= 0;
 
   const open = () => {
     tapFeedback();
     router.push(`/product/${product.slug}`);
   };
-
-  // ADD gives a quick pop on tap — a confirming beat that a colour change alone
-  // doesn't provide. Runs on the UI thread, so navigation can't stutter it.
-  const addScale = useSharedValue(1);
-  const addStyle = useAnimatedStyle(() => ({ transform: [{ scale: addScale.get() }] }));
 
   return (
     <PressableScale
@@ -65,18 +54,23 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
         style={{
           aspectRatio: 1,
           borderRadius: radius.md,
-          backgroundColor: color.well,
           overflow: "hidden",
         }}
         className="items-center justify-center"
       >
+        {/* Product shots are mostly cut-outs on white; a flat grey square makes
+            them look pasted on. A soft vertical wash seats them instead. */}
+        <LinearGradient
+          colors={["#FFFFFF", color.well]}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        />
         {image ? (
           <Image
             source={image}
             placeholder={BLUR_PLACEHOLDER}
             contentFit="contain"
-            transition={200}
-            style={{ width: "100%", height: "100%" }}
+            transition={220}
+            style={{ width: "86%", height: "86%" }}
           />
         ) : (
           <Icon name="photo" size={22} color={color.tertiaryLabel} />
@@ -86,12 +80,12 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
           <View
             style={{
               position: "absolute",
-              top: 0,
-              left: 0,
+              top: space.sm,
+              left: space.sm,
               backgroundColor: color.ribbon,
-              paddingHorizontal: space.sm,
-              paddingVertical: 2,
-              borderBottomRightRadius: radius.sm,
+              paddingHorizontal: space.md,
+              paddingVertical: 3,
+              borderRadius: radius.pill,
             }}
           >
             <Text style={{ ...type.micro, color: "#FFFFFF" }}>{off}% OFF</Text>
@@ -99,7 +93,9 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
         ) : null}
       </View>
 
-      <View style={{ gap: 2 }}>
+      {/* Fixed height: a one-line and a two-line name would otherwise leave the
+          price/ADD rows at different heights across a grid row. */}
+      <View style={{ gap: space.xs, height: 74 }}>
         <View style={{ gap: space.xs }} className="flex-row items-center">
           <Icon name="clock" size={9} color={color.tertiaryLabel} />
           <Text style={{ ...type.micro, color: color.tertiaryLabel, fontWeight: "400" }}>
@@ -107,22 +103,33 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
           </Text>
         </View>
 
-        <Text numberOfLines={2} style={{ ...type.cardTitle, color: color.label }}>
+        <Text numberOfLines={2} style={{ ...type.cardTitle, color: color.label, flex: 1 }}>
           {product.name}
         </Text>
 
-        <View style={{ gap: space.sm, minHeight: 15 }} className="flex-row items-center">
+        <View style={{ gap: space.sm }} className="flex-row items-center">
           {product.brand ? (
-            <Text style={{ ...type.meta, color: color.secondaryLabel }} numberOfLines={1}>
+            <Text
+              style={{ ...type.meta, color: color.secondaryLabel, flexShrink: 1 }}
+              numberOfLines={1}
+            >
               {product.brand}
             </Text>
           ) : null}
           {rating ? (
-            <View style={{ gap: 2 }} className="flex-row items-center">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 3,
+                backgroundColor: color.positiveWash,
+                paddingHorizontal: space.sm,
+                paddingVertical: 1,
+                borderRadius: radius.sm,
+              }}
+            >
               <Icon name="star" size={9} color={color.positive} />
-              <Text style={{ ...type.meta, color: color.secondaryLabel }}>
-                {rating.toFixed(1)}
-              </Text>
+              <Text style={{ ...type.micro, color: color.positive }}>{rating.toFixed(1)}</Text>
             </View>
           ) : null}
         </View>
@@ -130,14 +137,15 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
 
       {/* Price left, action right — the row a shopper's thumb lands on. */}
       <View className="flex-row items-end justify-between">
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, gap: 1 }}>
           <Text style={{ ...type.price, color: color.label }} numberOfLines={1}>
             {formatPrice(product.price)}
           </Text>
           {off ? (
             <Text
               style={{
-                ...type.meta,
+                ...type.micro,
+                fontWeight: "400",
                 color: color.tertiaryLabel,
                 textDecorationLine: "line-through",
               }}
@@ -148,41 +156,7 @@ export function ProductCard({ product, width }: { product: ApiProduct; width?: n
           ) : null}
         </View>
 
-        <Animated.View style={addStyle}>
-          <PressableScale
-            disabled={soldOut}
-            accessibilityRole="button"
-            accessibilityLabel={soldOut ? "Out of stock" : `View ${product.name}`}
-            activeScale={0.92}
-            onPress={() => {
-              selectionFeedback();
-              // `.set()` rather than `.value =` — the React Compiler lint treats
-              // direct assignment as mutating an immutable binding.
-              addScale.set(
-                withSequence(withSpring(1.12, springPop), withSpring(1, springPop))
-              );
-              open();
-            }}
-            android_ripple={{ color: color.brandWash }}
-            style={{
-              minWidth: 62,
-              height: 30,
-              paddingHorizontal: space.lg,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: soldOut ? color.border : color.brand,
-              backgroundColor: color.card,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{ ...type.action, color: soldOut ? color.tertiaryLabel : color.brand }}
-            >
-              {soldOut ? "SOLD" : "ADD"}
-            </Text>
-          </PressableScale>
-        </Animated.View>
+        <AddToCartControl productId={product.id} stock={product.stock} />
       </View>
     </PressableScale>
   );

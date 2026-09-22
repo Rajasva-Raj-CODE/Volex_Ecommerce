@@ -15,6 +15,12 @@ const ICONS = {
   star: { ios: "star.fill", android: "star" },
   cart: { ios: "cart.fill", android: "shopping-cart" },
   plus: { ios: "plus", android: "add" },
+  minus: { ios: "minus", android: "remove" },
+  heart: { ios: "heart", android: "favorite-border" },
+  heartFilled: { ios: "heart.fill", android: "favorite" },
+  trash: { ios: "trash", android: "delete-outline" },
+  person: { ios: "person.crop.circle", android: "account-circle" },
+  signOut: { ios: "rectangle.portrait.and.arrow.right", android: "logout" },
   clock: { ios: "clock.fill", android: "schedule" },
   warning: { ios: "exclamationmark.triangle.fill", android: "warning" },
   empty: { ios: "tray", android: "inbox" },
@@ -45,4 +51,6 @@ export function Icon({ name, size = 18, color: tint = color.label }: IconProps) 
 export const TAB_SYMBOLS = {
   home: { ios: ICONS.home.ios, android: ICONS.home.android },
   search: { ios: ICONS.search.ios, android: ICONS.search.android },
+  cart: { ios: ICONS.cart.ios, android: ICONS.cart.android },
+  account: { ios: ICONS.person.ios, android: ICONS.person.android },
 } as const;

@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import Animated, {
@@ -10,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../design/Icon";
 import { tapFeedback } from "../design/haptics";
 import { HEADER_COLLAPSE_DISTANCE } from "../design/motion";
-import { color, radius, space, type } from "../design/tokens";
+import { brandGradient, color, radius, shadowRaised, space, type } from "../design/tokens";
 import { PressableScale } from "./PressableScale";
 
 /** Shared search field, so the tall and compact headers can't drift apart. */
@@ -35,6 +36,7 @@ function SearchField({ height = 44 }: { height?: number }) {
         borderRadius: radius.md,
         paddingHorizontal: space.lg,
         height,
+        ...shadowRaised,
       }}
     >
       <Icon name="search" size={17} color={color.tertiaryLabel} />
@@ -75,9 +77,11 @@ export function StoreHeader({ scrollY }: { scrollY: SharedValue<number> }) {
   }));
 
   return (
-    <View
+    <LinearGradient
+      colors={brandGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={{
-        backgroundColor: color.brand,
         paddingTop: insets.top + space.md,
         paddingHorizontal: space.xl,
         paddingBottom: space.xl,
@@ -97,7 +101,7 @@ export function StoreHeader({ scrollY }: { scrollY: SharedValue<number> }) {
       </Animated.View>
 
       <SearchField />
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -132,17 +136,26 @@ export function CompactHeader({ scrollY }: { scrollY: SharedValue<number> }) {
           top: 0,
           left: 0,
           right: 0,
-          backgroundColor: color.brand,
-          paddingTop: insets.top + space.sm,
-          paddingHorizontal: space.xl,
-          paddingBottom: space.md,
           borderBottomLeftRadius: radius.lg,
           borderBottomRightRadius: radius.lg,
+          overflow: "hidden",
+          ...shadowRaised,
         },
         barStyle,
       ]}
     >
-      <SearchField height={38} />
+      <LinearGradient
+        colors={brandGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          paddingTop: insets.top + space.sm,
+          paddingHorizontal: space.xl,
+          paddingBottom: space.md,
+        }}
+      >
+        <SearchField height={38} />
+      </LinearGradient>
     </Animated.View>
   );
 }

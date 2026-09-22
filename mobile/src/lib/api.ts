@@ -1,12 +1,13 @@
+import { getAccessToken, getApiBaseUrl, refreshSession } from "./session";
+
 /**
  * Mobile API client.
  *
- * Deliberately mirrors client/lib/api.ts — same response envelope, same ApiError
- * shape — so the two packages stay in step with the server. Differences: no
- * Next.js `next` cache options, and the base URL comes from EXPO_PUBLIC_API_URL.
+ * Mirrors client/lib/api.ts — same response envelope, same ApiError shape — so
+ * the two packages stay in step with the server. Mobile-only additions:
+ *   - bearer token attachment + one transparent refresh-and-retry on 401
+ *   - a request timeout, because phones drop off networks in a way browsers don't
  */
-
-const DEFAULT_API_URL = "http://localhost:8000/api";
 
 interface ApiSuccessResponse<T> {
   success: true;
@@ -33,18 +34,22 @@ export class ApiError extends Error {
     this.code = code;
     this.details = details;
   }
+
+  /** True when the failure is connectivity, not the server rejecting us. */
+  get isNetworkError() {
+    return this.status === 0;
+  }
 }
 
 interface ApiRequestOptions extends Omit<RequestInit, "body"> {
   body?: BodyInit | null;
   json?: unknown;
-  /** Abort the request after this many ms. Phones drop off networks constantly. */
+  /** Attach the bearer token and retry once after refreshing on 401. */
+  auth?: boolean;
   timeoutMs?: number;
 }
 
-export function getApiBaseUrl() {
-  return (process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/$/, "");
-}
+export { getApiBaseUrl };
 
 function buildUrl(path: string) {
   return `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
@@ -71,14 +76,15 @@ async function parseApiResponse<T>(response: Response): Promise<ApiSuccessRespon
   return payload;
 }
 
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
-  const { json, headers, body, timeoutMs = 15_000, signal, ...init } = options;
+async function sendRequest(path: string, options: ApiRequestOptions, token: string | null) {
+  const { json, headers, body, timeoutMs = 15_000, signal, auth: _auth, ...init } = options;
   const finalHeaders = new Headers(headers);
 
   if (!finalHeaders.has("Accept")) finalHeaders.set("Accept", "application/json");
   if (json !== undefined && !finalHeaders.has("Content-Type")) {
     finalHeaders.set("Content-Type", "application/json");
   }
+  if (token) finalHeaders.set("Authorization", `Bearer ${token}`);
 
   // Combine the caller's signal (screen unmounted) with our own timeout.
   const controller = new AbortController();
@@ -87,17 +93,13 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   signal?.addEventListener("abort", onAbort);
 
   try {
-    const response = await fetch(buildUrl(path), {
+    return await fetch(buildUrl(path), {
       ...init,
       signal: controller.signal,
       headers: finalHeaders,
       body: json !== undefined ? JSON.stringify(json) : body,
     });
-
-    const payload = await parseApiResponse<T>(response);
-    return payload.data;
   } catch (err) {
-    if (err instanceof ApiError) throw err;
     if (controller.signal.aborted && !signal?.aborted) {
       throw new ApiError("The request timed out. Check your connection.", 0, "TIMEOUT");
     }
@@ -110,4 +112,22 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     clearTimeout(timer);
     signal?.removeEventListener("abort", onAbort);
   }
+}
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
+  const useAuth = options.auth ?? false;
+  let response = await sendRequest(path, options, useAuth ? getAccessToken() : null);
+
+  // Access tokens last 15 minutes, so an expired one is routine, not an error.
+  // Refresh once and replay. `refreshSession` is single-flight, so a screen
+  // firing three requests at once still rotates the token only once.
+  if (useAuth && response.status === 401) {
+    const fresh = await refreshSession();
+    if (fresh) {
+      response = await sendRequest(path, options, fresh);
+    }
+  }
+
+  const payload = await parseApiResponse<T>(response);
+  return payload.data;
 }

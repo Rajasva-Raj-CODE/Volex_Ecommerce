@@ -26,14 +26,16 @@ function Illustration({ name }: { name: IconName }) {
   return (
     <View
       style={{
-        width: 56,
-        height: 56,
+        width: 64,
+        height: 64,
         borderRadius: radius.pill,
         backgroundColor: color.brandWash,
+        borderWidth: 1,
+        borderColor: color.separator,
       }}
       className="items-center justify-center"
     >
-      <Icon name={name} size={24} color={color.brand} />
+      <Icon name={name} size={26} color={color.brand} />
     </View>
   );
 }
@@ -42,7 +44,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   return (
     <Centered>
       <Illustration name="warning" />
-      <Text style={{ ...type.section, color: color.label }} className="text-center">
+      <Text style={{ ...type.title, color: color.label }} className="text-center">
         Couldn&apos;t load this
       </Text>
       <Text style={{ ...type.body, color: color.secondaryLabel }} className="text-center">
@@ -70,7 +72,7 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <Centered>
       <Illustration name="empty" />
-      <Text style={{ ...type.section, color: color.label }} className="text-center">
+      <Text style={{ ...type.title, color: color.label }} className="text-center">
         {title}
       </Text>
       {hint ? (

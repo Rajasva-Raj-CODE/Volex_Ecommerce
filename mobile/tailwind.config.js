@@ -12,6 +12,7 @@ module.exports = {
         brand: {
           DEFAULT: "#49A5A2",
           dark: "#3D8E8B",
+          deep: "#2E7F7D",
           wash: "#E9F4F4",
           on: "#FFFFFF",
         },

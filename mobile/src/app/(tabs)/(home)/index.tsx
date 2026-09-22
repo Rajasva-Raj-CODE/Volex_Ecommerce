@@ -35,7 +35,17 @@ function SectionHeader({ title, onPress }: { title: string; onPress?: () => void
       style={{ paddingHorizontal: space.xl, marginBottom: space.lg }}
       className="flex-row items-center justify-between"
     >
-      <Text style={{ ...type.section, color: color.label }}>{title}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <View
+          style={{
+            width: 3,
+            height: 16,
+            borderRadius: radius.pill,
+            backgroundColor: color.brand,
+          }}
+        />
+        <Text style={{ ...type.section, color: color.label }}>{title}</Text>
+      </View>
       {onPress ? (
         <PressableScale
           onPress={onPress}
@@ -201,6 +211,8 @@ export default function HomeScreen() {
                         height: tileWidth,
                         borderRadius: radius.lg,
                         backgroundColor: color.brandWash,
+                        borderWidth: 1,
+                        borderColor: color.separator,
                         overflow: "hidden",
                         alignItems: "center",
                         justifyContent: "center",
@@ -221,7 +233,15 @@ export default function HomeScreen() {
                     </View>
                     <Text
                       numberOfLines={2}
-                      style={{ ...type.meta, color: color.label, textAlign: "center" }}
+                      style={{
+                        ...type.micro,
+                        fontWeight: "500",
+                        color: color.label,
+                        textAlign: "center",
+                        // Reserves two lines so tiles in a row bottom-align
+                        // whether their label wraps or not.
+                        height: 28,
+                      }}
                     >
                       {item.name}
                     </Text>
